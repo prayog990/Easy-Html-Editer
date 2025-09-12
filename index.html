@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easy Html Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --dark-bg: #1a1a1a;
+            --dark-header: #2d2d2d;
+            --dark-toolbar: #2d2d2d;
+            --dark-border: #404040;
+            --dark-text: #ffffff;
+            --dark-editor-bg: #1e1e1e;
+            --dark-editor-text: #d4d4d4;
+            --dark-input-bg: #404040;
+            --dark-input-border: #555;
+            --light-bg: #f5f5f5;
+            --light-header: #ffffff;
+            --light-toolbar: #ffffff;
+            --light-border: #e0e0e0;
+            --light-text: #333;
+            --light-editor-bg: #ffffff;
+            --light-editor-text: #333;
+            --light-input-bg: #ffffff;
+            --light-input-border: #ccc;
+            --accent-blue: #0066cc;
+            --accent-blue-hover: #0080ff;
+            --accent-success: #28a745;
+            --accent-success-hover: #218838;
+            --accent-danger: #dc3545;
+            --accent-danger-hover: #c82333;
+            --accent-warning: #fd7e14;
+            --accent-warning-hover: #e96500;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark-bg);
+            color: var(--dark-text);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Light Theme */
+        body.light-theme {
+            background: var(--light-bg);
+            color: var(--light-text);
+        }
+        body.light-theme .header,
+        body.light-theme .toolbar,
+        body.light-theme .side-panel-header,
+        body.light-theme .footer-toolbar,
+        body.light-theme .tab-bar { background: var(--light-header); border-color: var(--light-border); }
+        body.light-theme .section-header,
+        body.light-theme .preview-header { background: #f0f0f0; border-color: var(--light-border); }
+        body.light-theme .input-container textarea { background: var(--light-input-bg); border-color: var(--light-input-border); color: var(--light-text); }
+        body.light-theme .theme-toggle { background: var(--light-border); color: var(--light-text); }
+        body.light-theme .theme-toggle:hover { background: #d0d0d0; }
+        body.light-theme .preview-section { border-left-color: var(--light-border); }
+        body.light-theme .side-panel { background: var(--light-bg); border-left-color: var(--light-border); }
+        body.light-theme .tab-button { background: #f0f0f0; color: var(--light-text); border-bottom-color: var(--light-border); }
+        body.light-theme .tab-button.active { background: var(--light-bg); }
+        body.light-theme .btn-clear { color: #888; }
+        body.light-theme .btn-clear:hover { color: #000; }
+        body.light-theme .btn-icon { border-color: var(--light-border); color: var(--accent-danger); }
+        body.light-theme .btn-icon:hover { background: var(--accent-danger); color: white; }
+
+
+        .header {
+            background: var(--dark-header);
+            border-bottom: 1px solid var(--dark-border);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #007bff, #61dafb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+
+        .theme-toggle {
+            background: var(--dark-input-bg); border: none; color: white; padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: background 0.3s; font-size: 12px; white-space: nowrap;
+        }
+        .theme-toggle:hover { background: #505050; }
+
+        .btn {
+            background: var(--accent-blue); border: none; color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: background 0.3s; white-space: nowrap;
+        }
+        .btn:hover { background: var(--accent-blue-hover); }
+        .btn:disabled { background: #333; cursor: not-allowed; }
+        .btn-danger { background: var(--accent-danger); }
+        .btn-danger:hover { background: var(--accent-danger-hover); }
+        .btn-success { background: var(--accent-success); }
+        .btn-success:hover { background: var(--accent-success-hover); }
+        .btn-warning { background: var(--accent-warning); }
+        .btn-warning:hover { background: var(--accent-warning-hover); }
+
+        /* --- New Find/Replace Toolbar Styles --- */
+        .toolbar {
+            background: var(--dark-toolbar);
+            border-bottom: 1px solid var(--dark-border);
+            padding: 10px 15px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap; /* Allows stacking on smaller screens */
+        }
+        .input-container {
+            flex: 1; /* Each container takes half the space on wider screens */
+            min-width: 250px; /* Prevents them from getting too squished */
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .input-container label {
+            font-size: 12px;
+            color: #aaa;
+            font-weight: 500;
+        }
+        .textarea-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .input-container textarea {
+            width: 100%;
+            height: 70px;
+            resize: vertical;
+            font-family: 'Monaco', monospace;
+            background: var(--dark-input-bg);
+            border: 1px solid var(--dark-input-border);
+            color: var(--dark-editor-text);
+            padding: 8px 28px 8px 8px; /* Make space for clear button on the right */
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        .btn-clear {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 5px;
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 5px;
+            z-index: 5;
+        }
+        .btn-clear:hover { color: #fff; }
+
+        @media (max-width: 600px) {
+            .toolbar {
+                flex-direction: column; /* Stack vertically on mobile */
+            }
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .editor-section, .preview-section {
+            display: flex; flex-direction: column; width: 50%; height: 100%;
+        }
+
+        .section-header {
+            background: #333; padding: 8px 15px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--dark-border); flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .btn-icon {
+            background: none; border: 1px solid var(--accent-danger); color: var(--accent-danger); padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; transition: all 0.2s;
+        }
+        .btn-icon:hover { background: var(--accent-danger); color: white; }
+
+        .editor-container { flex: 1; position: relative; }
+        .code-editor {
+            width: 100%; height: 100%; background: var(--dark-editor-bg); color: var(--dark-editor-text); border: none; outline: none; padding: 15px; font-family: 'Monaco', 'Menlo', monospace; font-size: 14px; line-height: 1.5; resize: none; tab-size: 2;
+        }
+        .tab-button-editor {
+            position: absolute; bottom: 10px; right: 10px; background: rgba(0, 0, 0, 0.6); color: white; border: none; padding: 5px 10px; border-radius: 3px; font-size: 12px; cursor: pointer; z-index: 10; display: none;
+        }
+
+        .preview-section { border-left: 1px solid var(--dark-border); }
+        .preview-header {
+            background: #333; padding: 8px 15px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--dark-border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
+        }
+        .live-indicator { color: var(--accent-success); font-size: 11px; display: flex; align-items: center; gap: 5px; }
+        .live-dot { width: 8px; height: 8px; background: var(--accent-success); border-radius: 50%; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .preview-frame { flex: 1; border: none; background: white; width: 100%; height: 100%; }
+        .hidden-file-input { display: none; }
+
+                /* --- New Fullscreen Preview Styles --- */
+        .fullscreen-btn {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        body.light-theme .fullscreen-btn {
+            background: rgba(0,0,0,0.1);
+            border-color: #ccc;
+            color: #333;
+        }
+        .fullscreen-btn .fa-compress { display: none; } /* Hide compress icon by default */
+        
+        /* When body has fullscreen-preview class */
+        body.fullscreen-preview .header,
+        body.fullscreen-preview .toolbar,
+        body.fullscreen-preview .tab-bar,
+        body.fullscreen-preview .editor-section,
+        body.fullscreen-preview .footer-toolbar,
+        body.fullscreen-preview .side-panel {
+            display: none; /* Hide everything else */
+        }
+        body.fullscreen-preview .main-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 2000;
+        }
+        body.fullscreen-preview .preview-section {
+            width: 100%;
+            height: 100%;
+            border-left: none;
+        }
+        body.fullscreen-preview .fullscreen-btn .fa-expand { display: none; } /* Hide expand icon */
+        body.fullscreen-preview .fullscreen-btn .fa-compress { display: inline-block; } /* Show compress icon */
+
+
+        /* Mobile Layout */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 18px; }
+            .main-container { flex-direction: column; }
+            .editor-section, .preview-section {
+                width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: none;
+            }
+            .editor-section.active, .preview-section.active { display: flex; position: relative; }
+            .preview-section { border-left: none; }
+            .hamburger-menu { display: block; background: var(--dark-header); color: white; border: none; font-size: 20px; padding: 0 10px; cursor: pointer; position: absolute; right: 10px; top: 15px; z-index: 1100; }
+            .header .theme-toggle { display: none; }
+            .side-panel { position: fixed; top: 0; right: -300px; width: 250px; height: 100vh; background: var(--dark-bg); border-left: 1px solid var(--dark-border); box-shadow: -5px 0 15px rgba(0,0,0,0.3); z-index: 1000; transition: right 0.3s ease-in-out; display: flex; flex-direction: column; }
+            .side-panel.open { right: 0; }
+            .side-panel-header { background: var(--dark-header); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dark-border); flex-shrink: 0; }
+            .side-panel-header h3 { font-size: 16px; color: #61dafb; }
+            .side-panel .btn-close { background: none; border: none; color: white; font-size: 20px; cursor: pointer; }
+            .side-panel-content { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+            .side-panel .btn { width: 100%; justify-content: flex-start; padding: 10px 15px; font-size: 14px; }
+            .tab-bar { display: flex; justify-content: space-around; background: var(--dark-toolbar); border-bottom: 1px solid var(--dark-border); height: 45px; flex-shrink: 0; }
+            .tab-button { flex: 1; background: var(--dark-toolbar); border: none; color: var(--dark-text); padding: 10px 0; font-size: 14px; cursor: pointer; transition: background 0.3s, color 0.3s; border-bottom: 3px solid transparent; }
+            .tab-button:hover { background: #404040; }
+            .tab-button.active { background: var(--dark-bg); border-bottom-color: #61dafb; color: #61dafb; }
+            .footer-toolbar { display: flex; justify-content: space-around; align-items: center; background: var(--dark-toolbar); border-top: 1px solid var(--dark-border); height: 55px; flex-shrink: 0; padding: 0 10px; }
+            .footer-toolbar .btn { flex: 1; padding: 8px 5px; font-size: 12px; margin: 0 3px; }
+            .tab-button-editor { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>Easy Html Editor</h1>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <i class="fas fa-sun"></i> Light
+        </button>
+        <button class="hamburger-menu" onclick="toggleSidePanel()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- New Search and Replace Toolbar -->
+    <div class="toolbar">
+        <div class="input-container">
+            <label for="findBlock"><i class="fas fa-search"></i> इस कोड को खोजें (Find this code):</label>
+            <div class="textarea-wrapper">
+                <textarea id="findBlock" placeholder="यहाँ पुराना कोड पेस्ट करें..."></textarea>
+                <button class="btn-clear" onclick="clearInput('findBlock')" title="Clear">×</button>
+            </div>
+            <button class="btn" onclick="findAndSelectText()"><i class="fas fa-search"></i> खोजें</button>
+        </div>
+        <div class="input-container">
+            <label for="replaceBlock"><i class="fas fa-exchange-alt"></i> इस कोड से बदलें (Replace with this code):</label>
+            <div class="textarea-wrapper">
+                <textarea id="replaceBlock" placeholder="यहाँ नया कोड पेस्ट करें..."></textarea>
+                <button class="btn-clear" onclick="clearInput('replaceBlock')" title="Clear">×</button>
+            </div>
+            <button class="btn btn-warning" onclick="replaceCodeBlock()"><i class="fas fa-magic"></i> कोड बदलें</button>
+        </div>
+    </div>
+
+    <!-- Mobile Tab Bar for Editor/Preview -->
+    <div class="tab-bar">
+        <button class="tab-button active" id="editorTabBtn" onclick="showSection('editor')">
+            <i class="fas fa-code"></i> कोड
+        </button>
+        <button class="tab-button" id="previewTabBtn" onclick="showSection('preview')">
+            <i class="fas fa-eye"></i> प्रिव्यू
+        </button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Editor Section -->
+        <div class="editor-section active" id="editorSection">
+            <div class="section-header">
+                <span><i class="fas fa-code"></i> Editor (HTML)</span>
+                <button class="btn-icon" onclick="clearEditor()" title="Clear Editor">
+                    <i class="fas fa-trash"></i> खाली करें
+                </button>
+            </div>
+            <div class="editor-container">
+                <textarea class="code-editor" id="codeEditor" oninput="updatePreview(); saveToHistory();"><!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>मेरी वेबसाइट</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
+        h1 { font-size: 2.5em; margin-bottom: 20px; animation: fadeInUp 1s ease; }
+        .btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 12px 24px; margin: 10px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-size: 16px; }
+        .btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; padding: 20px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>स्वागत है! 🎉</h1>
+        <div class="card">
+            <p>यह एक सुंदर और interactive वेबसाइट है। आप इसे real-time में edit कर सकते हैं!</p>
+            <button class="btn" onclick="showMessage()">मैसेज दिखाएं</button>
+            <button class="btn" onclick="changeColor()">रंग बदलें</button>
+            <button class="btn" onclick="addAnimation()">एनीमेशन जोड़ें</button>
+        </div>
+        <div class="card">
+            <h3>आपकी जानकारी:</h3>
+            <p>समय: <span id="currentTime"></span></p>
+            <p>क्लिक काउंट: <span id="clickCount">0</span></p>
+        </div>
+    </div>
+    <script>
+        let clickCount = 0;
+        function showMessage() { clickCount++; document.getElementById('clickCount').textContent = clickCount; alert('हैलो! आपने बटन दबाया है। 😊'); }
+        function changeColor() { const colors = [ 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' ]; const randomColor = colors[Math.floor(Math.random() * colors.length)]; document.body.style.background = randomColor; }
+        function addAnimation() { const container = document.querySelector('.container'); container.style.animation = 'none'; setTimeout(() => { container.style.animation = 'fadeInUp 0.5s ease'; }, 10); }
+        function updateTime() { const now = new Date(); document.getElementById('currentTime').textContent = now.toLocaleString('hi-IN'); }
+        updateTime(); setInterval(updateTime, 1000);
+    </script>
+</body>
+</html></textarea>
+                <button class="tab-button-editor" onclick="insertTab()">Tab</button>
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section" id="previewSection">
+                        <div class="preview-header">
+                <span><i class="fas fa-eye"></i> रियल-टाइम प्रिव्यू</span>
+                <div class="live-indicator"> <div class="live-dot"></div> <span>Live</span> </div>
+                <button class="fullscreen-btn" onclick="toggleFullScreenPreview()" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                    <i class="fas fa-compress"></i>
+                </button>
+            </div>
+            <iframe class="preview-frame" id="previewFrame"></iframe>
+        </div>
+    </div>
+
+    <!-- Side Panel (for mobile actions) -->
+    <div class="side-panel" id="sidePanel">
+        <div class="side-panel-header">
+            <h3>एक्शंस</h3>
+            <button class="btn-close" onclick="toggleSidePanel()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="side-panel-content">
+            <button class="btn" onclick="undo()" id="undoBtnSP" disabled> <i class="fas fa-undo"></i> Undo </button>
+            <button class="btn" onclick="redo()" id="redoBtnSP" disabled> <i class="fas fa-redo"></i> Redo </button>
+            <button class="btn btn-warning" onclick="uploadFile()"> <i class="fas fa-folder-open"></i> अपलोड </button>
+            <button class="btn btn-danger" onclick="clearEditor()"> <i class="fas fa-trash"></i> खाली करें </button>
+            <button class="btn" onclick="downloadFile()"> <i class="fas fa-download"></i> डाउनलोड </button>
+            <button class="btn btn-success" onclick="openPreview()"> <i class="fas fa-eye"></i> नई विंडो में प्रिव्यू </button>
+            <hr style="border-color: var(--dark-border); margin: 10px 0;">
+            <button class="theme-toggle" onclick="toggleTheme()"> <i class="fas fa-sun"></i> Light/Dark थीम </button>
+            <span class="file-name" id="fileNameSP" style="font-size: 13px; color: #aaa; text-align: center; margin-top: 10px;">फाइल: index.html</span>
+        </div>
+    </div>
+
+    <!-- Footer Toolbar (for mobile essential actions) -->
+    <div class="footer-toolbar">
+        <button class="btn btn-success" onclick="runCode()"> <i class="fas fa-play"></i> रन </button>
+        <button class="btn" onclick="undo()" id="undoBtnFT" disabled> <i class="fas fa-undo"></i> </button>
+        <button class="btn" onclick="redo()" id="redoBtnFT" disabled> <i class="fas fa-redo"></i> </button>
+        <button class="btn btn-warning" onclick="uploadFile()"> <i class="fas fa-folder-open"></i> </button>
+        <button class="btn btn-danger" onclick="downloadFile()"> <i class="fas fa-download"></i> </button>
+    </div>
+
+    <input type="file" class="hidden-file-input" id="fileInput" accept=".html,.htm,.txt" onchange="handleFileUpload(event)">
+
+    <script>
+        let history = [];
+        let historyIndex = -1;
+        let isLightTheme = false;
+        let sidePanelOpen = false;
+
+        window.onload = function() {
+            saveToHistory();
+            updatePreview();
+            if (window.innerWidth <= 768) { showSection('editor'); }
+        };
+
+        function toggleTheme() {
+            isLightTheme = !isLightTheme;
+            const body = document.body;
+            const themeToggleBtns = document.querySelectorAll('.theme-toggle');
+            if (isLightTheme) {
+                body.classList.add('light-theme');
+                themeToggleBtns.forEach(btn => btn.innerHTML = '<i class="fas fa-moon"></i> Dark');
+            } else {
+                body.classList.remove('light-theme');
+                themeToggleBtns.forEach(btn => btn.innerHTML = '<i class="fas fa-sun"></i> Light');
+            }
+        }
+
+        function toggleSidePanel() {
+            sidePanelOpen = !sidePanelOpen;
+            document.getElementById('sidePanel').classList.toggle('open');
+        }
+
+        function showSection(sectionId) {
+            const editorSection = document.getElementById('editorSection');
+            const previewSection = document.getElementById('previewSection');
+            const editorTabBtn = document.getElementById('editorTabBtn');
+            const previewTabBtn = document.getElementById('previewTabBtn');
+
+            editorSection.classList.toggle('active', sectionId === 'editor');
+            previewSection.classList.toggle('active', sectionId === 'preview');
+            editorTabBtn.classList.toggle('active', sectionId === 'editor');
+            previewTabBtn.classList.toggle('active', sectionId === 'preview');
+
+            if (sectionId === 'preview') { updatePreview(); }
+        }
+
+        function saveToHistory() {
+            const code = document.getElementById('codeEditor').value;
+            if (history[historyIndex] === code) return;
+            if (historyIndex < history.length - 1) { history = history.slice(0, historyIndex + 1); }
+            history.push(code);
+            historyIndex = history.length - 1;
+            if (history.length > 50) { history.shift(); historyIndex--; }
+            updateUndoRedoButtons();
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtns = document.querySelectorAll('#undoBtnSP, #undoBtnFT');
+            const redoBtns = document.querySelectorAll('#redoBtnSP, #redoBtnFT');
+            undoBtns.forEach(btn => btn.disabled = historyIndex <= 0);
+            redoBtns.forEach(btn => btn.disabled = historyIndex >= history.length - 1);
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                document.getElementById('codeEditor').value = history[historyIndex];
+                updatePreview();
+                updateUndoRedoButtons();
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                document.getElementById('codeEditor').value = history[historyIndex];
+                updatePreview();
+                updateUndoRedoButtons();
+            }
+        }
+
+        function updatePreview() {
+            const code = document.getElementById('codeEditor').value;
+            document.getElementById('previewFrame').src = 'data:text/html;charset=utf-8,' + encodeURIComponent(code);
+        }
+
+                // --- New and Updated Functions ---
+
+        function toggleFullScreenPreview() {
+            document.body.classList.toggle('fullscreen-preview');
+        }
+
+        function clearInput(elementId) {
+            document.getElementById(elementId).value = '';
+        }
+
+        function findAndSelectText() {
+            const editor = document.getElementById('codeEditor');
+            const codeToFind = document.getElementById('findBlock').value;
+            if (!codeToFind) {
+                alert('खोजने के लिए बॉक्स में कुछ लिखें।');
+                return;
+            }
+            const startIndex = editor.value.indexOf(codeToFind);
+            if (startIndex !== -1) {
+                if (window.innerWidth <= 768) { showSection('editor'); }
+                editor.focus();
+                editor.setSelectionRange(startIndex, startIndex + codeToFind.length);
+                const scrollRatio = startIndex / editor.value.length;
+                editor.scrollTop = (editor.scrollHeight * scrollRatio) - 50;
+            } else {
+                alert('कोड नहीं मिला।');
+            }
+        }
+
+        function replaceCodeBlock() {
+            const editor = document.getElementById('codeEditor');
+            const codeToFind = document.getElementById('findBlock').value;
+            const codeToReplace = document.getElementById('replaceBlock').value;
+            if (!codeToFind) {
+                alert('"खोजें" वाला बॉक्स खाली है! कृपया वो कोड पेस्ट करें जिसे आप बदलना चाहते हैं।');
+                return;
+            }
+            const currentCode = editor.value;
+            const startIndex = currentCode.indexOf(codeToFind);
+            if (startIndex !== -1) {
+                const newCode = currentCode.replace(codeToFind, codeToReplace);
+                editor.value = newCode;
+                saveToHistory();
+                updatePreview();
+                editor.focus();
+                editor.setSelectionRange(startIndex, startIndex + codeToReplace.length);
+                
+                // *** यही है वो नया कोड जो स्क्रॉल करता है ***
+                const scrollRatio = startIndex / editor.value.length;
+                editor.scrollTop = (editor.scrollHeight * scrollRatio) - 50; 
+                
+                alert('✅ बहुत बढ़िया! कोड सफलतापूर्वक बदल दिया गया है।');
+            } else {
+                alert('❌ माफ करें, "खोजें" वाला कोड एडिटर में कहीं नहीं मिला।');
+            }
+        }
+
+        // --- Other Functions ---
+
+        function uploadFile() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('codeEditor').value = e.target.result;
+                    document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
+                    saveToHistory();
+                    updatePreview();
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function clearEditor() {
+            if (confirm('क्या आप वाकई एडिटर को पूरी तरह साफ करना चाहते हैं?')) {
+                document.getElementById('codeEditor').value = '';
+                saveToHistory();
+                updatePreview();
+            }
+        }
+
+        function downloadFile() {
+            const fileName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '') || 'index.html';
+            const code = document.getElementById('codeEditor').value;
+            const blob = new Blob([code], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function openPreview() {
+            const newWindow = window.open();
+            if (newWindow) {
+                newWindow.document.write(document.getElementById('codeEditor').value);
+                newWindow.document.close();
+            } else {
+                alert('पॉप-अप ब्लॉक हो गया! कृपया अपने ब्राउज़र में पॉप-अप की अनुमति दें।');
+            }
+        }
+
+        function runCode() {
+            updatePreview();
+            const runBtn = document.querySelector('.footer-toolbar .btn-success');
+            if (runBtn) {
+                const originalHTML = runBtn.innerHTML;
+                runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                setTimeout(() => { runBtn.innerHTML = originalHTML; }, 500);
+            }
+        }
+        
+        function insertTab() {
+            const editor = document.getElementById('codeEditor');
+            const start = editor.selectionStart;
+            editor.value = editor.value.substring(0, start) + '  ' + editor.value.substring(editor.selectionEnd);
+            editor.selectionStart = editor.selectionEnd = start + 2;
+            editor.focus();
+            saveToHistory();
+        }
+
+        document.getElementById('codeEditor').addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') { e.preventDefault(); insertTab(); }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (sidePanelOpen) return;
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's': e.preventDefault(); downloadFile(); break;
+                    case 'z': e.preventDefault(); e.shiftKey ? redo() : undo(); break;
+                }
+            }
+            if (e.key === 'Escape' && sidePanelOpen) { toggleSidePanel(); }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (sidePanelOpen && !document.getElementById('sidePanel').contains(e.target) && !document.querySelector('.hamburger-menu').contains(e.target)) {
+                toggleSidePanel();
+            }
+        });
+    </script>
+</body>
+</html>
