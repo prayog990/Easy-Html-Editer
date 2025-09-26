@@ -331,7 +331,7 @@
                 </button>
             </div>
             <div class="editor-container">
-                <textarea class="code-editor" id="codeEditor" oninput="updatePreview(); saveToHistory();"><!DOCTYPE html>
+                <textarea class="code-editor" id="codeEditor" oninput="updatePreview(); saveToHistory(); saveCodeToLocalStorage();"><!DOCTYPE html>
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
@@ -426,10 +426,45 @@
         let isLightTheme = false;
         let sidePanelOpen = false;
 
-        window.onload = function() {
+        // --- Auto-Save/Load Functions (Local Storage) ---
+        const LOCAL_STORAGE_KEY = 'easyHtmlEditorCode';
+
+        function saveCodeToLocalStorage() {
+            const code = document.getElementById('codeEditor').value;
+            localStorage.setItem(LOCAL_STORAGE_KEY, code);
+            // console.log('Code saved to local storage.'); // आप इसे डीबगिंग के लिए हटा सकते हैं
+        }
+
+        function loadCodeFromLocalStorage() {
+            const savedCode = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedCode) {
+                document.getElementById('codeEditor').value = savedCode;
+                updatePreview();
+                saveToHistory(); // लोडेड कोड को भी हिस्ट्री में जोड़ें
+                // console.log('Code loaded from local storage.'); // आप इसे डीबगिंग के लिए हटा सकते हैं
+            }
+        }
+
+        // `DOMContentLoaded` इवेंट का उपयोग करें ताकि हम DOM के पूरी तरह लोड होने के बाद काम कर सकें
+        window.addEventListener('DOMContentLoaded', function() {
+            loadCodeFromLocalStorage(); // पेज लोड होते ही लोकल स्टोरेज से कोड लोड करें
+
+            // सुनिश्चित करें कि `saveToHistory` और `updatePreview` भी पहली बार सही से चलें
             saveToHistory();
             updatePreview();
-            if (window.innerWidth <= 768) { showSection('editor'); }
+            
+            // मोबाइल लेआउट के लिए
+            if (window.innerWidth <= 768) { 
+                showSection('editor'); 
+            }
+            // Undo/Redo बटन की स्थिति अपडेट करें
+            updateUndoRedoButtons(); 
+        });
+
+        // `window.onload` अब खाली रहेगा या इसे हटाया जा सकता है
+        // क्योंकि इसकी सभी महत्वपूर्ण कार्यक्षमता `DOMContentLoaded` में स्थानांतरित कर दी गई है।
+        window.onload = function() {
+            // आप इसे खाली छोड़ सकते हैं या हटा सकते हैं
         };
 
         function toggleTheme() {
