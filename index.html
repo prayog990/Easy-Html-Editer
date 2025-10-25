@@ -4,15 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Easy Html Editor</title>
-    <!-- CodeMirror Library -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/material-darker.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/xml/xml.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/javascript/javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/css/css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/htmlmixed/htmlmixed.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/closetag.min.js"></script>
+    <!-- Ace Editor Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ace.js"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -111,7 +104,7 @@
             line-height: 1.5; height: 100%; width: 100%;
         }
         body.light-theme .CodeMirror { background: var(--editor-bg); color: var(--text-color); }
-        .code-editor { display: none; }
+        .code-editor { height: 100%; width: 100%; }
         
         .preview-section { border-left: 1px solid var(--border-color); }
         .preview-header {
@@ -235,7 +228,42 @@
             .footer-toolbar .btn { flex: 1; padding: 8px 5px; font-size: 12px; }
             .toolbar { flex-direction: column; }
         }
-    </style>
+    /* --- Toolbar Slider Styles --- */
+    #toolbar-slider {
+        display: none; /* यह डेस्कटॉप पर छिपा रहेगा */
+        background: var(--surface-color);
+        padding: 4px 0;
+        text-align: center;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-muted-color);
+        position: relative;
+        z-index: 10;
+    }
+    #toolbar-slider i {
+        transition: transform 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+        #toolbar-slider {
+            display: block; /* यह सिर्फ मोबाइल पर दिखेगा */
+        }
+        .toolbar {
+            transition: all 0.3s ease;
+            max-height: 500px; /* Transition के लिए */
+            overflow: hidden;
+        }
+        body.toolbar-collapsed .toolbar {
+            max-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        body.toolbar-collapsed #toolbar-slider i {
+            transform: rotate(180deg); /* आइकन को घुमाओ */
+        }
+    }
+</style>
 </head>
 <body>
     <!-- Header -->
@@ -275,15 +303,20 @@
         </div>
     </div>
 
-    <!-- Mobile Tab Bar -->
-    <div class="tab-bar">
-        <button class="tab-button active" id="editorTabBtn" onclick="showSection('editor')">
-            <i class="fas fa-code"></i> कोड
-        </button>
-        <button class="tab-button" id="previewTabBtn" onclick="showSection('preview')">
-            <i class="fas fa-eye"></i> प्रिव्यू
-        </button>
-    </div>
+    <!-- Toolbar Slider Handle -->
+<div id="toolbar-slider" onclick="toggleToolbar()">
+    <i class="fas fa-chevron-up"></i>
+</div>
+
+<!-- Mobile Tab Bar -->
+<div class="tab-bar">
+    <button class="tab-button active" id="editorTabBtn" onclick="showSection('editor')">
+        <i class="fas fa-code"></i> कोड
+    </button>
+    <button class="tab-button" id="previewTabBtn" onclick="showSection('preview')">
+        <i class="fas fa-eye"></i> प्रिव्यू
+    </button>
+</div>
 
     <!-- Main Container -->
     <div class="main-container">
@@ -303,7 +336,7 @@
                 </button>
             </div>
             <div class="editor-container">
-                <textarea class="code-editor" id="codeEditor"><!DOCTYPE html>
+                <div class="code-editor" id="codeEditor"><!DOCTYPE html>
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
@@ -313,7 +346,7 @@
 <body>
     <h1>स्वागत है!</h1>
 </body>
-</html></textarea>
+</html></div>
             </div>
         </div>
 
@@ -385,481 +418,431 @@
     </div>
 
     <script>
-        const editor = document.getElementById('codeEditor');
-        const sidePanel = document.getElementById('sidePanel');
-        const body = document.body;
-        const themeToggleBtn = document.querySelector('.header .theme-toggle');
-        const hamburgerMenu = document.querySelector('.hamburger-menu');
+    // --- NEW: Ace Editor Setup ---
+    const editorElement = document.getElementById('codeEditor');
+    const sidePanel = document.getElementById('sidePanel');
+    const body = document.body;
+    const themeToggleBtn = document.querySelector('.header .theme-toggle');
+    const hamburgerMenu = document.querySelector('.hamburger-menu');
 
-        let history = [];
-        let historyIndex = -1;
-        let sidePanelOpen = false;
-        let searchMatches = []; // अब यह मैच ऑब्जेक्ट्स को स्टोर करेगा (index और text के साथ)
-        let currentMatchIndex = -1;
-        let totalChanges = 0;
-        let currentMarks = []; // लगाए हुए रंगों को याद रखने के लिए
-        let cmEditor;
+    let aceEditor; // Global variable for the Ace instance
+    let sidePanelOpen = false;
+    let searchMatches = [];
+    let currentMatchIndex = -1;
+    let totalChanges = 0;
+    let currentMarkers = []; // To keep track of Ace markers
 
-        // --- THEME MANAGEMENT ---
-        function setLightDark(mode) {
-            let cmTheme = 'material-darker';
-            if (mode === 'light') {
-                body.classList.add('light-theme');
-                themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i> <span>Dark Mode</span>';
-                document.getElementById('lightToggleBtn').classList.add('active');
-                document.getElementById('darkToggleBtn').classList.remove('active');
-                cmTheme = 'default';
-            } else {
-                body.classList.remove('light-theme');
-                themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i> <span>Light Mode</span>';
-                document.getElementById('darkToggleBtn').classList.add('active');
-                document.getElementById('lightToggleBtn').classList.remove('active');
-            }
-            if (cmEditor) { cmEditor.setOption('theme', cmTheme); }
-            localStorage.setItem('editorThemeMode', mode);
+    // --- THEME MANAGEMENT ---
+    function setLightDark(mode) {
+        let aceTheme = 'ace/theme/tomorrow_night'; // Dark theme for Ace
+        if (mode === 'light') {
+            body.classList.add('light-theme');
+            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i> <span>Dark Mode</span>';
+            document.getElementById('lightToggleBtn').classList.add('active');
+            document.getElementById('darkToggleBtn').classList.remove('active');
+            aceTheme = 'ace/theme/chrome'; // Light theme for Ace
+        } else {
+            body.classList.remove('light-theme');
+            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i> <span>Light Mode</span>';
+            document.getElementById('darkToggleBtn').classList.add('active');
+            document.getElementById('lightToggleBtn').classList.remove('active');
         }
+        if (aceEditor) { aceEditor.setTheme(aceTheme); }
+        localStorage.setItem('editorThemeMode', mode);
+    }
 
-        function setAccentColor(element) {
-            const color = element.getAttribute('data-color');
-            const hoverColor = element.getAttribute('data-hover');
-            document.documentElement.style.setProperty('--accent-color', color);
-            document.documentElement.style.setProperty('--accent-hover-color', hoverColor);
-            
-            document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
-            element.classList.add('active');
-            
-            localStorage.setItem('editorAccentColor', color);
-            localStorage.setItem('editorAccentHoverColor', hoverColor);
-        }
+    function setAccentColor(element) {
+        const color = element.getAttribute('data-color');
+        const hoverColor = element.getAttribute('data-hover');
+        document.documentElement.style.setProperty('--accent-color', color);
+        document.documentElement.style.setProperty('--accent-hover-color', hoverColor);
         
-        function toggleLightDark() {
-            if(body.classList.contains('light-theme')) {
-                setLightDark('dark');
-            } else {
-                setLightDark('light');
-            }
-        }
-
-        // --- CUSTOM MODAL/ALERT FUNCTIONS ---
-        const customModal = document.getElementById('customModal');
-        const modalMessage = document.getElementById('modalMessage');
-        const modalOkBtn = document.getElementById('modalOkBtn');
-        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
+        element.classList.add('active');
         
-        function showCustomAlert(message) {
-            modalMessage.textContent = message;
-            modalCancelBtn.style.display = 'none';
-            modalOkBtn.textContent = 'ठीक है';
-            customModal.style.display = 'flex';
-
-            return new Promise((resolve) => {
-                modalOkBtn.onclick = () => {
-                    customModal.style.display = 'none';
-                    resolve(true);
-                };
-            });
+        localStorage.setItem('editorAccentColor', color);
+        localStorage.setItem('editorAccentHoverColor', hoverColor);
+    }
+    
+    function toggleLightDark() {
+        if(body.classList.contains('light-theme')) {
+            setLightDark('dark');
+        } else {
+            setLightDark('light');
         }
-        
-        function showCustomConfirm(message) {
-            modalMessage.textContent = message;
-            modalCancelBtn.style.display = 'block';
-            modalOkBtn.textContent = 'हाँ';
-            modalCancelBtn.textContent = 'नहीं';
-            customModal.style.display = 'flex';
+    }
+    
+    // --- CUSTOM MODAL FUNCTIONS (Unchanged) ---
+    const customModal = document.getElementById('customModal');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalOkBtn = document.getElementById('modalOkBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+    
+    function showCustomAlert(message) {
+        modalMessage.textContent = message;
+        modalCancelBtn.style.display = 'none';
+        modalOkBtn.textContent = 'ठीक है';
+        customModal.style.display = 'flex';
 
-            return new Promise((resolve) => {
-                modalOkBtn.onclick = () => {
-                    customModal.style.display = 'none';
-                    resolve(true);
-                };
-                modalCancelBtn.onclick = () => {
-                    customModal.style.display = 'none';
-                    resolve(false);
-                };
-            });
+        return new Promise((resolve) => {
+            modalOkBtn.onclick = () => {
+                customModal.style.display = 'none';
+                resolve(true);
+            };
+        });
+    }
+    
+    function showCustomConfirm(message) {
+        modalMessage.textContent = message;
+        modalCancelBtn.style.display = 'block';
+        modalOkBtn.textContent = 'हाँ';
+        modalCancelBtn.textContent = 'नहीं';
+        customModal.style.display = 'flex';
+
+        return new Promise((resolve) => {
+            modalOkBtn.onclick = () => {
+                customModal.style.display = 'none';
+                resolve(true);
+            };
+            modalCancelBtn.onclick = () => {
+                customModal.style.display = 'none';
+                resolve(false);
+            };
+        });
+    }
+
+    // --- Core Editor Functions (Adapted for Ace) ---
+    function updatePreview() {
+        if (!aceEditor) return;
+        document.getElementById('previewFrame').src = 'data:text/html;charset=utf-8,' + encodeURIComponent(aceEditor.getValue());
+    }
+    
+    function saveCodeToLocalStorage() {
+        if (!aceEditor) return;
+        localStorage.setItem('easyHtmlEditorCode', aceEditor.getValue());
+    }
+
+    function loadCodeFromLocalStorage() {
+        const savedCode = localStorage.getItem('easyHtmlEditorCode');
+        if (savedCode && aceEditor) {
+            aceEditor.setValue(savedCode, -1); // -1 moves cursor to start
         }
+    }
 
-        // --- Core Editor Functions ---
-        function updatePreview() {
-            if (!cmEditor) return;
-            document.getElementById('previewFrame').src = 'data:text/html;charset=utf-8,' + encodeURIComponent(cmEditor.getValue());
-        }
-        
-        function saveCodeToLocalStorage() {
-            if (!cmEditor) return;
-            localStorage.setItem('easyHtmlEditorCode', cmEditor.getValue());
-        }
+    // --- Undo/Redo updated for Ace's UndoManager ---
+    function updateUndoRedoButtons() {
+        const undoManager = aceEditor.session.getUndoManager();
+        const hasUndo = undoManager.hasUndo();
+        const hasRedo = undoManager.hasRedo();
+        document.querySelectorAll('#undoBtnSP, #undoBtnFT').forEach(btn => btn.disabled = !hasUndo);
+        document.querySelectorAll('#redoBtnSP, #redoBtnFT').forEach(btn => btn.disabled = !hasRedo);
+    }
 
-        function loadCodeFromLocalStorage() {
-            const savedCode = localStorage.getItem('easyHtmlEditorCode');
-            if (savedCode && cmEditor) {
-                cmEditor.setValue(savedCode);
-            }
-        }
+    function undo() { if (aceEditor) aceEditor.undo(); }
+    function redo() { if (aceEditor) aceEditor.redo(); }
 
-        function saveToHistory() {
-            if (!cmEditor) return;
-            const code = cmEditor.getValue();
-            if (history[historyIndex] === code) return;
-            if (historyIndex < history.length - 1) { history = history.slice(0, historyIndex + 1); }
-            history.push(code);
-            historyIndex = history.length - 1;
-            if (history.length > 50) { history.shift(); historyIndex--; }
-            updateUndoRedoButtons();
-        }
+    // --- Highlighting updated for Ace Markers ---
+    function clearAllMarks() {
+        currentMarkers.forEach(markerId => aceEditor.session.removeMarker(markerId));
+        currentMarkers = [];
+    }
 
-        function updateUndoRedoButtons() {
-            const isDisabled = historyIndex <= 0;
-            document.querySelectorAll('#undoBtnSP, #undoBtnFT').forEach(btn => btn.disabled = isDisabled);
-            const redoDisabled = historyIndex >= history.length - 1;
-            document.querySelectorAll('#redoBtnSP, #redoBtnFT').forEach(btn => btn.disabled = redoDisabled);
-        }
-
-        function undo() { if (historyIndex > 0) { historyIndex--; cmEditor.setValue(history[historyIndex]); updateUndoRedoButtons(); }}
-        function redo() { if (historyIndex < history.length - 1) { historyIndex++; cmEditor.setValue(history[historyIndex]); updateUndoRedoButtons(); }}
-
-        function clearAllMarks() {
-            currentMarks.forEach(mark => mark.clear());
-            currentMarks = [];
-        }
-
-        // --- Change Counter Functions ---
-        function updateChangeCounter(count) {
-            totalChanges += count;
-            const counterElement = document.getElementById('changeCounter');
-            
-            if (totalChanges > 0) {
-                counterElement.innerHTML = `<i class="fas fa-sync-alt"></i> ${totalChanges}`;
-                counterElement.style.display = 'inline-flex';
-            } else {
-                counterElement.style.display = 'none';
-            }
-            localStorage.setItem('editorTotalChanges', totalChanges);
-        }
-
-        function resetChangeCounter() {
-            totalChanges = 0;
-            const counterElement = document.getElementById('changeCounter');
+    // --- Change Counter Functions (Unchanged) ---
+    function updateChangeCounter(count) {
+        totalChanges += count;
+        const counterElement = document.getElementById('changeCounter');
+        if (totalChanges > 0) {
+            counterElement.innerHTML = `<i class="fas fa-sync-alt"></i> ${totalChanges}`;
+            counterElement.style.display = 'inline-flex';
+        } else {
             counterElement.style.display = 'none';
-            localStorage.setItem('editorTotalChanges', '0');
+        }
+        localStorage.setItem('editorTotalChanges', totalChanges);
+    }
+
+    function resetChangeCounter() {
+        totalChanges = 0;
+        const counterElement = document.getElementById('changeCounter');
+        counterElement.style.display = 'none';
+        localStorage.setItem('editorTotalChanges', '0');
+    }
+    
+    // --- UI & Interaction Functions (Mostly Unchanged) ---
+    function toggleSidePanel() { sidePanel.classList.toggle('open'); sidePanelOpen = !sidePanelOpen; }
+    function showSection(sectionId) {
+        document.getElementById('editorSection').classList.toggle('active', sectionId === 'editor');
+        document.getElementById('previewSection').classList.toggle('active', sectionId === 'preview');
+        document.getElementById('editorTabBtn').classList.toggle('active', sectionId === 'editor');
+        document.getElementById('previewTabBtn').classList.toggle('active', sectionId === 'preview');
+        if (sectionId === 'editor' && aceEditor) {
+            aceEditor.resize(); // Important for Ace to redraw correctly
+        }
+        if (sectionId === 'preview') { updatePreview(); }
+    }
+    function toggleFullScreenPreview() { body.classList.toggle('fullscreen-preview'); }
+    function clearInput(elementId) { document.getElementById(elementId).value = ''; }
+    
+    // --- Search/Replace Logic (HEAVILY Adapted for Ace) ---
+    function createSearchRegex(searchText) {
+        const escapedText = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = escapedText.trim().replace(/\s+/g, '\\s+');
+        return new RegExp(pattern, 'gi'); // 'g' for global, 'i' for case-insensitive
+    }
+
+    function findAndSelectText() {
+        clearAllMarks();
+        const codeToFind = document.getElementById('findBlock').value;
+        const findNavContainer = document.getElementById('findNavContainer');
+        const replaceAllBtn = document.getElementById('replaceAllBtn');
+
+        searchMatches = [];
+        currentMatchIndex = -1;
+        
+        if (!codeToFind) {
+            showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
+            findNavContainer.style.display = 'none';
+            replaceAllBtn.style.display = 'none';
+            return;
         }
         
-        // --- UI & Interaction Functions ---
-        function toggleSidePanel() { sidePanel.classList.toggle('open'); sidePanelOpen = !sidePanelOpen; }
-        function showSection(sectionId) {
-            document.getElementById('editorSection').classList.toggle('active', sectionId === 'editor');
-            document.getElementById('previewSection').classList.toggle('active', sectionId === 'preview');
-            document.getElementById('editorTabBtn').classList.toggle('active', sectionId === 'editor');
-            document.getElementById('previewTabBtn').classList.toggle('active', sectionId === 'preview');
-            if (sectionId === 'preview') { updatePreview(); }
-        }
-        function toggleFullScreenPreview() { body.classList.toggle('fullscreen-preview'); }
-        function clearInput(elementId) { document.getElementById(elementId).value = ''; }
+        const Range = ace.require("ace/range").Range;
         
-        // --- NEW HELPER FUNCTION: सर्च टेक्स्ट को RegEx पैटर्न में बदलने के लिए ---
-        function createSearchRegex(searchText) {
-            // RegEx के स्पेशल कैरेक्टर्स (जैसे ., *, +) को एस्केप करें
-            const escapedText = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            // सभी व्हाइटस्पेस (spaces, newlines, tabs) को \s+ से बदलें
-            // इसका मतलब है "एक या एक से ज़्यादा कोई भी व्हाइटस्पेस"
-            const pattern = escapedText.trim().replace(/\s+/g, '\\s+');
-            return new RegExp(pattern, 'g'); // 'g' मतलब ग्लोबल, यानी सारे मैच खोजो
-        }
+        // Ace's findAll is powerful
+        searchMatches = aceEditor.findAll(createSearchRegex(codeToFind), {
+            regExp: true
+        });
+        
+        // Add markers for all matches
+        searchMatches.forEach(range => {
+            const markerId = aceEditor.session.addMarker(range, "cm-searched-text", "text", true);
+            currentMarkers.push(markerId);
+        });
 
-        // --- UPDATED: findAndSelectText फ़ंक्शन अब RegEx का उपयोग करेगा ---
-        function findAndSelectText() {
-            clearAllMarks();
-            const codeToFind = document.getElementById('findBlock').value;
-            const findNavContainer = document.getElementById('findNavContainer');
-            const replaceAllBtn = document.getElementById('replaceAllBtn');
-
-            searchMatches = [];
-            currentMatchIndex = -1;
+        if (searchMatches.length > 0) {
+            if (window.innerWidth <= 768) { showSection('editor'); }
+            currentMatchIndex = 0;
+            highlightCurrentMatch();
             
-            if (!codeToFind) {
-                showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
-                findNavContainer.style.display = 'none';
-                replaceAllBtn.style.display = 'none';
-                return;
-            }
+            findNavContainer.style.display = searchMatches.length > 1 ? 'inline-flex' : 'none';
+            replaceAllBtn.style.display = searchMatches.length > 0 ? 'inline-flex' : 'none';
 
-            const editorContent = cmEditor.getValue();
-            const searchRegex = createSearchRegex(codeToFind);
-            let match;
+        } else {
+            showCustomAlert('कोड नहीं मिला।');
+            findNavContainer.style.display = 'none';
+            replaceAllBtn.style.display = 'none';
+        }
+        updateNavButtons();
+    }
+    
+    function replaceCodeBlock() {
+        const codeToReplace = document.getElementById('replaceBlock').value;
+        if (currentMatchIndex === -1 || searchMatches.length === 0) {
+            showCustomAlert('पहले कोड खोजें जिसे आप बदलना चाहते हैं।');
+            return;
+        }
+        
+        const rangeToReplace = searchMatches[currentMatchIndex];
+        aceEditor.session.replace(rangeToReplace, codeToReplace);
+        updateChangeCounter(1);
+        showCustomAlert('✅ 1 कोड बदल दिया गया है।');
+        
+        // Re-run the search to update ranges and markers
+        findAndSelectText();
+    }
 
-            // RegEx का उपयोग करके एडिटर के कंटेंट में सभी मैच ढूंढें
-            while ((match = searchRegex.exec(editorContent)) !== null) {
-                // हर मैच की जानकारी स्टोर करें (उसका टेक्स्ट और पोजीशन)
-                searchMatches.push({
-                    text: match[0],
-                    index: match.index
-                });
-                
-                // मिले हुए टेक्स्ट को मार्क (रंग) करें
-                const from = cmEditor.posFromIndex(match.index);
-                const to = cmEditor.posFromIndex(match.index + match[0].length);
-                currentMarks.push(cmEditor.markText(from, to, { className: 'cm-searched-text' }));
-            }
+    function replaceAllCode() {
+        const codeToReplace = document.getElementById('replaceBlock').value;
+        const matchesFound = searchMatches.length;
 
-            if (searchMatches.length > 0) {
-                if (window.innerWidth <= 768) { showSection('editor'); }
-                currentMatchIndex = 0;
-                highlightCurrentMatch();
-                
-                if (searchMatches.length > 1) {
-                    findNavContainer.style.display = 'inline-flex';
-                    replaceAllBtn.style.display = 'inline-flex';
-                } else {
-                    findNavContainer.style.display = 'none';
-                    replaceAllBtn.style.display = 'none';
-                }
-            } else {
-                showCustomAlert('कोड नहीं मिला।');
-                findNavContainer.style.display = 'none';
-                replaceAllBtn.style.display = 'none';
-            }
+        if (matchesFound < 1) {
+            showCustomAlert('पहले कोड खोजें।');
+            return;
+        }
+        
+        aceEditor.replaceAll(codeToReplace);
+        updateChangeCounter(matchesFound);
+        showCustomAlert(`✅ शानदार! कोड की ${matchesFound} कॉपियां बदल दी गई हैं।`);
+        
+        clearAllMarks();
+        document.getElementById('findNavContainer').style.display = 'none';
+        document.getElementById('replaceAllBtn').style.display = 'none';
+        searchMatches = [];
+        currentMatchIndex = -1;
+    }
+
+    function highlightCurrentMatch() {
+        if (currentMatchIndex === -1 || !searchMatches[currentMatchIndex]) return;
+        const range = searchMatches[currentMatchIndex];
+        aceEditor.selection.setRange(range);
+        aceEditor.revealRange(range, true);
+        aceEditor.focus();
+    }
+
+    function findNext() {
+        if (currentMatchIndex < searchMatches.length - 1) {
+            currentMatchIndex++;
+            highlightCurrentMatch();
             updateNavButtons();
         }
-        
-        // --- UPDATED: replaceCodeBlock फ़ंक्शन अब searchMatches ऐरे का उपयोग करेगा ---
-        function replaceCodeBlock() {
-            const codeToReplace = document.getElementById('replaceBlock').value;
-            
-            if (currentMatchIndex === -1 || searchMatches.length === 0) {
-                showCustomAlert('पहले कोड खोजें जिसे आप बदलना चाहते हैं।');
-                return;
-            }
-            
-            // वर्तमान में चुने गए मैच की जानकारी प्राप्त करें
-            const currentMatch = searchMatches[currentMatchIndex];
-            const from = cmEditor.posFromIndex(currentMatch.index);
-            const to = cmEditor.posFromIndex(currentMatch.index + currentMatch.text.length);
+    }
 
-            // उस खास मार्क को ढूंढो और हटाओ
-            const marks = cmEditor.findMarks(from, to);
-            marks.forEach(mark => {
-                if (mark.className === 'cm-searched-text') mark.clear();
-            });
+    function findPrev() {
+        if (currentMatchIndex > 0) {
+            currentMatchIndex--;
+            highlightCurrentMatch();
+            updateNavButtons();
+        }
+    }
+    
+    function updateNavButtons() {
+        const prevBtn = document.getElementById('findPrevBtn');
+        const nextBtn = document.getElementById('findNextBtn');
+        const matchCounter = document.getElementById('matchCounter');
 
-            // सीधे टेक्स्ट को बदलें
-            cmEditor.replaceRange(codeToReplace, from, to);
-            updateChangeCounter(1);
-            showCustomAlert('✅ 1 कोड बदल दिया गया है।');
-
-            // नए बदले हुए टेक्स्ट को हरे रंग से मार्क करो
-            const newTo = cmEditor.posFromIndex(cmEditor.indexFromPos(from) + codeToReplace.length);
-            currentMarks.push(cmEditor.markText(from, newTo, { className: 'cm-replaced-text' }));
-            
-            // यह सबसे ज़रूरी है: बदलने के बाद सभी मैचों को फिर से खोजें
-            // क्योंकि एक बदलाव से बाकी सभी मैचों की पोजीशन बदल सकती है।
-            findAndSelectText();
-
+        if (searchMatches.length <= 1) {
+            matchCounter.textContent = '';
+            return;
         }
 
-        // --- UPDATED: replaceAllCode फ़ंक्शन भी अब RegEx पर आधारित है ---
-        function replaceAllCode() {
-            const codeToFind = document.getElementById('findBlock').value;
-            const codeToReplace = document.getElementById('replaceBlock').value;
+        matchCounter.textContent = `${currentMatchIndex + 1} / ${searchMatches.length}`;
+        prevBtn.disabled = currentMatchIndex <= 0;
+        nextBtn.disabled = currentMatchIndex >= searchMatches.length - 1;
+    }
 
-            if (!codeToFind) return;
-
-            clearAllMarks(); // पुराने सारे रंग हटाओ
-
-            const searchRegex = createSearchRegex(codeToFind);
-            const editorContent = cmEditor.getValue();
-            let matchesFound = 0;
-            
-            // हम एक ही बार में सारे कोड को बदल देंगे
-            const newContent = editorContent.replace(searchRegex, (match) => {
-                matchesFound++;
-                return codeToReplace;
-            });
-            
-            if (matchesFound > 0) {
-                 cmEditor.setValue(newContent); // एडिटर में नया कंटेंट सेट करें
-                 updateChangeCounter(matchesFound);
-                 showCustomAlert(`✅ शानदार! कोड की ${matchesFound} कॉपियां बदल दी गई हैं।`);
-            } else {
-                 showCustomAlert('कोड नहीं मिला जिसे बदला जा सके।');
-            }
-            
-            document.getElementById('findNavContainer').style.display = 'none';
-            document.getElementById('replaceAllBtn').style.display = 'none';
-            searchMatches = [];
-            currentMatchIndex = -1;
-        }
-
-        function highlightCurrentMatch() {
-            if (currentMatchIndex === -1 || !searchMatches[currentMatchIndex]) return;
-            const match = searchMatches[currentMatchIndex];
-            
-            const startIndex = match.index;
-            const endIndex = startIndex + match.text.length;
-            
-            cmEditor.focus();
-            cmEditor.setSelection(cmEditor.posFromIndex(startIndex), cmEditor.posFromIndex(endIndex));
-            cmEditor.scrollIntoView({ from: cmEditor.posFromIndex(startIndex), to: cmEditor.posFromIndex(endIndex) }, 100);
-        }
-
-        function findNext() {
-            if (currentMatchIndex < searchMatches.length - 1) {
-                currentMatchIndex++;
-                highlightCurrentMatch();
-                updateNavButtons();
-            }
-        }
-
-        function findPrev() {
-            if (currentMatchIndex > 0) {
-                currentMatchIndex--;
-                highlightCurrentMatch();
-                updateNavButtons();
-            }
-        }
-        
-        function updateNavButtons() {
-            const prevBtn = document.getElementById('findPrevBtn');
-            const nextBtn = document.getElementById('findNextBtn');
-            const matchCounter = document.getElementById('matchCounter');
-
-            if (searchMatches.length <= 1) {
-                matchCounter.textContent = '';
-                return;
-            }
-
-            matchCounter.textContent = `${currentMatchIndex + 1} / ${searchMatches.length}`;
-            
-            prevBtn.disabled = currentMatchIndex <= 0;
-            prevBtn.classList.toggle('active', currentMatchIndex > 0);
-
-            nextBtn.disabled = currentMatchIndex >= searchMatches.length - 1;
-            nextBtn.classList.toggle('active', currentMatchIndex < searchMatches.length - 1);
-        }
-
-        // --- File & Other Functions ---
-        function uploadFile() { document.getElementById('fileInput').click(); }
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    cmEditor.setValue(e.target.result);
-                    document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
-                    resetChangeCounter();
-                };
-                reader.readAsText(file);
-            }
-        }
-
-        async function clearEditor() {
-            const confirmed = await showCustomConfirm('क्या आप वाकई एडिटर को पूरी तरह साफ करना चाहते हैं? यह वापस नहीं आएगा।');
-            if (confirmed) { 
-                cmEditor.setValue('<!DOCTYPE html>\n<html>\n<head>\n  <title>मेरी वेबसाइट</title>\n</head>\n<body>\n\n</body>\n</html>'); 
+    // --- File & Other Functions (Unchanged Logic, just uses aceEditor) ---
+    function uploadFile() { document.getElementById('fileInput').click(); }
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                aceEditor.setValue(e.target.result, -1);
+                document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
                 resetChangeCounter();
-            }
+            };
+            reader.readAsText(file);
         }
+    }
 
-        function downloadFile() {
-            const fileName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '') || 'index.html';
-            const blob = new Blob([cmEditor.getValue()], { type: 'text/html' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = fileName;
-            a.click();
-            URL.revokeObjectURL(a.href);
+    async function clearEditor() {
+        const confirmed = await showCustomConfirm('क्या आप वाकई एडिटर को पूरी तरह साफ करना चाहते हैं? यह वापस नहीं आएगा।');
+        if (confirmed) { 
+            aceEditor.setValue('<!DOCTYPE html>\n<html>\n<head>\n  <title>मेरी वेबसाइट</title>\n</head>\n<body>\n\n</body>\n</html>', -1); 
+            resetChangeCounter();
         }
+    }
 
-        function openPreview() {
-            try {
-                const newWindow = window.open();
-                newWindow.document.write(cmEditor.getValue());
-                newWindow.document.close();
-            } catch (e) {
-                showCustomAlert('पॉप-अप ब्लॉक हो गया! कृपया अपने ब्राउज़र में पॉप-अप की अनुमति दें।');
-            }
+    function downloadFile() {
+        const fileName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '') || 'index.html';
+        const blob = new Blob([aceEditor.getValue()], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function openPreview() {
+        try {
+            const newWindow = window.open();
+            newWindow.document.write(aceEditor.getValue());
+            newWindow.document.close();
+        } catch (e) {
+            showCustomAlert('पॉप-अप ब्लॉक हो गया! कृपया अपने ब्राउज़र में पॉप-अप की अनुमति दें।');
         }
+    }
 
-        function runCode() {
+    function runCode() {
+        updatePreview();
+        const runBtn = document.querySelector('.footer-toolbar .btn');
+        if(runBtn) {
+            runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            setTimeout(() => { runBtn.innerHTML = '<i class="fas fa-play"></i> रन'; }, 500);
+        }
+    }
+    
+    function toggleToolbar() {
+        document.body.classList.toggle('toolbar-collapsed');
+    }
+
+    // --- Event Listeners ---
+    window.addEventListener('DOMContentLoaded', () => {
+        // Initialize Ace Editor
+        aceEditor = ace.edit("codeEditor");
+        aceEditor.setOptions({
+            mode: "ace/mode/html",
+            selectionStyle: "text",
+            lineWrapping: true,
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true,
+            fontSize: "14px",
+        });
+        
+        // Load initial content from the div
+        const initialContent = editorElement.textContent;
+        editorElement.textContent = '';
+        aceEditor.setValue(initialContent, -1);
+
+        // Set initial theme and load saved code
+        const savedMode = localStorage.getItem('editorThemeMode') || 'dark';
+        setLightDark(savedMode);
+        
+        const savedColor = localStorage.getItem('editorAccentColor') || '#007aff';
+        const savedHoverColor = localStorage.getItem('editorAccentHoverColor') || '#005ecb';
+        document.documentElement.style.setProperty('--accent-color', savedColor);
+        document.documentElement.style.setProperty('--accent-hover-color', savedHoverColor);
+        document.querySelectorAll('.color-swatch').forEach(sw => {
+            sw.classList.toggle('active', sw.getAttribute('data-color') === savedColor);
+        });
+        
+        loadCodeFromLocalStorage();
+        aceEditor.session.getUndoManager().reset(); // Clear initial history
+        updateUndoRedoButtons();
+        updatePreview();
+
+        // Editor change event
+        aceEditor.session.on('change', () => {
             updatePreview();
-            const runBtn = document.querySelector('.footer-toolbar .btn');
-            if(runBtn) {
-                runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                setTimeout(() => { runBtn.innerHTML = '<i class="fas fa-play"></i> रन'; }, 500);
-            }
-        }
-
-        // --- Event Listeners ---
-        window.addEventListener('DOMContentLoaded', () => {
-            cmEditor = CodeMirror.fromTextArea(editor, {
-                lineNumbers: true,
-                mode: 'htmlmixed',
-                theme: 'material-darker',
-                autoCloseTags: true,
-                lineWrapping: true,
-                tabSize: 2,
-            });
-
-            cmEditor.on('change', () => {
-                updatePreview();
-                saveToHistory();
-                saveCodeToLocalStorage();
-            });
-            
-            const savedMode = localStorage.getItem('editorThemeMode') || 'dark';
-            const savedColor = localStorage.getItem('editorAccentColor') || '#007aff';
-            const savedHoverColor = localStorage.getItem('editorAccentHoverColor') || '#005ecb';
-            
-            setLightDark(savedMode);
-            document.documentElement.style.setProperty('--accent-color', savedColor);
-            document.documentElement.style.setProperty('--accent-hover-color', savedHoverColor);
-
-            document.querySelectorAll('.color-swatch').forEach(sw => {
-                if(sw.getAttribute('data-color') === savedColor) sw.classList.add('active');
-                else sw.classList.remove('active');
-            });
-            
-            loadCodeFromLocalStorage();
-            cmEditor.clearHistory();
-            history = [];
-            saveToHistory();
-            updatePreview();
-            if (window.innerWidth <= 768) { showSection('editor'); }
+            saveCodeToLocalStorage();
             updateUndoRedoButtons();
-
-            const savedChanges = parseInt(localStorage.getItem('editorTotalChanges') || '0');
-            if (savedChanges > 0) {
-                totalChanges = savedChanges;
-                const counterElement = document.getElementById('changeCounter');
-                counterElement.innerHTML = `<i class="fas fa-sync-alt"></i> ${totalChanges}`;
-                counterElement.style.display = 'inline-flex';
-            }
-
-            const observer = new MutationObserver(mutations => {
-                for (let mutation of mutations) {
-                    if (mutation.attributeName === 'class' && document.getElementById('editorSection').classList.contains('active')) {
-                        cmEditor.refresh();
-                    }
-                }
-            });
-            observer.observe(document.getElementById('editorSection'), { attributes: true });
         });
 
-        document.addEventListener('keydown', (e) => {
-            if (sidePanelOpen) return;
-            if (e.ctrlKey || e.metaKey) {
-                switch(e.key) {
-                    case 's': e.preventDefault(); downloadFile(); break;
-                    case 'z': e.preventDefault(); e.shiftKey ? redo() : undo(); break;
-                }
-            }
-            if (e.key === 'Escape' && sidePanelOpen) { toggleSidePanel(); }
-        });
+        if (window.innerWidth <= 768) { showSection('editor'); }
 
-        document.addEventListener('click', (event) => {
-            if (sidePanel.classList.contains('open') && !sidePanel.contains(event.target) && !hamburgerMenu.contains(event.target)) {
-                toggleSidePanel();
+        // Load change counter
+        const savedChanges = parseInt(localStorage.getItem('editorTotalChanges') || '0');
+        if (savedChanges > 0) {
+            totalChanges = savedChanges;
+            document.getElementById('changeCounter').innerHTML = `<i class="fas fa-sync-alt"></i> ${totalChanges}`;
+            document.getElementById('changeCounter').style.display = 'inline-flex';
+        }
+        
+        // Observer for mobile view resizing
+        const observer = new MutationObserver(() => {
+            if (document.getElementById('editorSection').classList.contains('active')) {
+                aceEditor.resize();
             }
         });
-    </script>
+        observer.observe(document.getElementById('editorSection'), { attributes: true, attributeFilter: ['class'] });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (sidePanelOpen) return;
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 's': e.preventDefault(); downloadFile(); break;
+                case 'z': e.preventDefault(); e.shiftKey ? redo() : undo(); break;
+            }
+        }
+        if (e.key === 'Escape' && sidePanelOpen) { toggleSidePanel(); }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (sidePanel.classList.contains('open') && !sidePanel.contains(event.target) && !hamburgerMenu.contains(event.target)) {
+            toggleSidePanel();
+        }
+    });
+</script>
+
 </body>
 </html>
