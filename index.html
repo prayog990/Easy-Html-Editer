@@ -526,6 +526,20 @@
         const savedCode = localStorage.getItem('easyHtmlEditorCode');
         if (savedCode && aceEditor) {
             aceEditor.setValue(savedCode, -1); // -1 moves cursor to start
+        } else if (aceEditor) {
+            // अगर कुछ भी सेव नहीं है, तो डिफ़ॉल्ट कोड दिखाओ
+            const defaultCode = `<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>मेरी वेबसाइट</title>
+</head>
+<body>
+    <h1>स्वागत है!</h1>
+</body>
+</html>`;
+            aceEditor.setValue(defaultCode, -1);
         }
     }
 
@@ -712,17 +726,25 @@
     // --- File & Other Functions (Unchanged Logic, just uses aceEditor) ---
     function uploadFile() { document.getElementById('fileInput').click(); }
     function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                aceEditor.setValue(e.target.result, -1);
-                document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
-                resetChangeCounter();
-            };
-            reader.readAsText(file);
-        }
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // पहले एडिटर टैब दिखाओ ताकि एडिटर को अपना साइज़ पता चल जाए
+            showSection('editor'); 
+            
+            aceEditor.setValue(e.target.result, -1);
+            document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
+            resetChangeCounter();
+
+            // एडिटर को रि-रेंडर करने के लिए मजबूर करो
+            setTimeout(() => {
+                aceEditor.resize();
+            }, 10);
+        };
+        reader.readAsText(file);
     }
+}
 
     async function clearEditor() {
         const confirmed = await showCustomConfirm('क्या आप वाकई एडिटर को पूरी तरह साफ करना चाहते हैं? यह वापस नहीं आएगा।');
