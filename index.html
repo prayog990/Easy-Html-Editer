@@ -502,21 +502,28 @@
     
     function saveCodeToLocalStorage() {
         if (!aceEditor) return;
-        localStorage.setItem('easyHtmlEditorCode', aceEditor.getValue());
+        try {
+            localStorage.setItem('easyHtmlEditorCode', aceEditor.getValue());
+        } catch (e) {
+            console.warn("localStorage is not available.");
+        }
     }
 
     // --- FINAL CORRECTED LOADING LOGIC ---
     function loadInitialCode(initialCodeFromHtml) {
-        const savedCode = localStorage.getItem('easyHtmlEditorCode');
+        let savedCode = null;
+        try {
+            savedCode = localStorage.getItem('easyHtmlEditorCode');
+        } catch (e) {
+            // localStorage might be blocked in content:// URI
+            console.warn("localStorage is not available.");
+        }
         
         if (savedCode) {
-            // Priority 1: Always use code from a previous session if available
             aceEditor.setValue(savedCode, -1);
         } else if (initialCodeFromHtml && initialCodeFromHtml.trim() !== '') {
-            // Priority 2: Use the code from the opened HTML file itself
             aceEditor.setValue(initialCodeFromHtml, -1);
         } else {
-            // Priority 3 (Last Resort): If nothing else, load the default starter code
             const defaultCode = `<!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -584,20 +591,17 @@
     
     // --- Search/Replace Logic for Ace ---
     function findAndSelectText() {
-        clearAllMarks();
         const codeToFind = document.getElementById('findBlock').value;
         const findNavContainer = document.getElementById('findNavContainer');
         const replaceAllBtn = document.getElementById('replaceAllBtn');
-        searchMatches = [];
-        currentMatchIndex = -1;
         if (!codeToFind) {
             showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
             return;
         }
-        searchMatches = aceEditor.findAll(codeToFind, { regExp: false, caseSensitive: false, wholeWord: false });
-        if (searchMatches > 0) {
+        const matchesFound = aceEditor.findAll(codeToFind, { regExp: false, caseSensitive: false, wholeWord: false });
+        if (matchesFound > 0) {
             if (window.innerWidth <= 768) { showSection('editor'); }
-            findNavContainer.style.display = searchMatches > 1 ? 'inline-flex' : 'none';
+            findNavContainer.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
             replaceAllBtn.style.display = 'inline-flex';
         } else {
             showCustomAlert('कोड नहीं मिला।');
@@ -606,11 +610,7 @@
         }
     }
     
-    function replaceCodeBlock() {
-        const codeToReplace = document.getElementById('replaceBlock').value;
-        aceEditor.replace(codeToReplace);
-        updateChangeCounter(1);
-    }
+    function replaceCodeBlock() { aceEditor.replace(document.getElementById('replaceBlock').value); updateChangeCounter(1); }
 
     function replaceAllCode() {
         const codeToFind = document.getElementById('findBlock').value;
@@ -639,7 +639,7 @@
                 aceEditor.setValue(e.target.result, -1);
                 document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
                 resetChangeCounter();
-                setTimeout(() => { aceEditor.resize(); }, 10);
+                setTimeout(() => { aceEditor.resize(); }, 100); // Increased timeout for safety
             };
             reader.readAsText(file);
         }
@@ -648,13 +648,14 @@
     async function clearEditor() {
         const confirmed = await showCustomConfirm('क्या आप वाकई एडिटर को पूरी तरह साफ करना चाहते हैं?');
         if (confirmed) { 
-            loadInitialCode(''); // Load default code
+            loadInitialCode('');
             resetChangeCounter();
+            document.getElementById('fileNameSP').textContent = 'फाइल: index.html';
         }
     }
 
     function downloadFile() {
-        const fileName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '') || 'index.html';
+        const fileName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '').trim() || 'index.html';
         const blob = new Blob([aceEditor.getValue()], { type: 'text/html' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -688,7 +689,14 @@
 
     // --- Event Listeners ---
     window.addEventListener('DOMContentLoaded', () => {
-        aceEditor = ace.edit("codeEditor");
+        // --- THIS IS THE CRITICAL FIX ---
+        // 1. First, find the element and read its content.
+        const editorDiv = document.getElementById('codeEditor');
+        const initialContent = editorDiv.textContent;
+        
+        // 2. NOW, initialize Ace Editor. It will clear the div, but we have the content safe.
+        aceEditor = ace.edit(editorDiv);
+        
         ace.require("ace/ext/language_tools");
         aceEditor.setOptions({
             mode: "ace/mode/html",
@@ -700,9 +708,7 @@
             fontFamily: 'Monaco, Menlo, monospace'
         });
         
-        const initialContent = editorElement.textContent;
-        editorElement.textContent = ''; // Clear div for Ace to take over
-        
+        // Load themes, colors etc.
         const savedMode = localStorage.getItem('editorThemeMode') || 'dark';
         setLightDark(savedMode);
         
@@ -714,19 +720,22 @@
             sw.classList.toggle('active', sw.getAttribute('data-color') === savedColor);
         });
         
-        loadInitialCode(initialContent); // Use the new robust loading function
+        // 3. Load the code using our robust function with the CORRECT initial content.
+        loadInitialCode(initialContent); 
+        
         aceEditor.session.getUndoManager().reset();
         updateUndoRedoButtons();
         updatePreview();
 
+        // Standard change listener
         aceEditor.session.on('change', () => {
             updatePreview();
             saveCodeToLocalStorage();
             updateUndoRedoButtons();
         });
 
+        // Other UI setup
         if (window.innerWidth <= 768) { showSection('editor'); }
-
         const savedChanges = parseInt(localStorage.getItem('editorTotalChanges') || '0');
         if (savedChanges > 0) {
             totalChanges = savedChanges;
