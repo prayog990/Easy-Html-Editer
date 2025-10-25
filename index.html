@@ -394,7 +394,7 @@
         let history = [];
         let historyIndex = -1;
         let sidePanelOpen = false;
-        let searchMatches = [];
+        let searchMatches = []; // अब यह मैच ऑब्जेक्ट्स को स्टोर करेगा (index और text के साथ)
         let currentMatchIndex = -1;
         let totalChanges = 0;
         let currentMarks = []; // लगाए हुए रंगों को याद रखने के लिए
@@ -518,7 +518,6 @@
         function undo() { if (historyIndex > 0) { historyIndex--; cmEditor.setValue(history[historyIndex]); updateUndoRedoButtons(); }}
         function redo() { if (historyIndex < history.length - 1) { historyIndex++; cmEditor.setValue(history[historyIndex]); updateUndoRedoButtons(); }}
 
-        // --- NEW: Function to clear all highlights ---
         function clearAllMarks() {
             currentMarks.forEach(mark => mark.clear());
             currentMarks = [];
@@ -556,9 +555,20 @@
         }
         function toggleFullScreenPreview() { body.classList.toggle('fullscreen-preview'); }
         function clearInput(elementId) { document.getElementById(elementId).value = ''; }
+        
+        // --- NEW HELPER FUNCTION: सर्च टेक्स्ट को RegEx पैटर्न में बदलने के लिए ---
+        function createSearchRegex(searchText) {
+            // RegEx के स्पेशल कैरेक्टर्स (जैसे ., *, +) को एस्केप करें
+            const escapedText = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            // सभी व्हाइटस्पेस (spaces, newlines, tabs) को \s+ से बदलें
+            // इसका मतलब है "एक या एक से ज़्यादा कोई भी व्हाइटस्पेस"
+            const pattern = escapedText.trim().replace(/\s+/g, '\\s+');
+            return new RegExp(pattern, 'g'); // 'g' मतलब ग्लोबल, यानी सारे मैच खोजो
+        }
 
+        // --- UPDATED: findAndSelectText फ़ंक्शन अब RegEx का उपयोग करेगा ---
         function findAndSelectText() {
-            clearAllMarks(); // सबसे पहले पुराने सारे रंग हटाओ
+            clearAllMarks();
             const codeToFind = document.getElementById('findBlock').value;
             const findNavContainer = document.getElementById('findNavContainer');
             const replaceAllBtn = document.getElementById('replaceAllBtn');
@@ -574,21 +584,27 @@
             }
 
             const editorContent = cmEditor.getValue();
-            let startIndex = editorContent.indexOf(codeToFind);
-            while(startIndex !== -1) {
-                searchMatches.push(startIndex);
-                // यहाँ जादू होगा: टेक्स्ट को मार्क (रंग) करो
-                const from = cmEditor.posFromIndex(startIndex);
-                const to = cmEditor.posFromIndex(startIndex + codeToFind.length);
-                currentMarks.push(cmEditor.markText(from, to, { className: 'cm-searched-text' }));
+            const searchRegex = createSearchRegex(codeToFind);
+            let match;
+
+            // RegEx का उपयोग करके एडिटर के कंटेंट में सभी मैच ढूंढें
+            while ((match = searchRegex.exec(editorContent)) !== null) {
+                // हर मैच की जानकारी स्टोर करें (उसका टेक्स्ट और पोजीशन)
+                searchMatches.push({
+                    text: match[0],
+                    index: match.index
+                });
                 
-                startIndex = editorContent.indexOf(codeToFind, startIndex + 1);
+                // मिले हुए टेक्स्ट को मार्क (रंग) करें
+                const from = cmEditor.posFromIndex(match.index);
+                const to = cmEditor.posFromIndex(match.index + match[0].length);
+                currentMarks.push(cmEditor.markText(from, to, { className: 'cm-searched-text' }));
             }
 
             if (searchMatches.length > 0) {
                 if (window.innerWidth <= 768) { showSection('editor'); }
                 currentMatchIndex = 0;
-                highlightCurrentMatch(); // यह अब भी सिलेक्शन का काम करेगा
+                highlightCurrentMatch();
                 
                 if (searchMatches.length > 1) {
                     findNavContainer.style.display = 'inline-flex';
@@ -604,9 +620,9 @@
             }
             updateNavButtons();
         }
-
+        
+        // --- UPDATED: replaceCodeBlock फ़ंक्शन अब searchMatches ऐरे का उपयोग करेगा ---
         function replaceCodeBlock() {
-            const codeToFind = document.getElementById('findBlock').value;
             const codeToReplace = document.getElementById('replaceBlock').value;
             
             if (currentMatchIndex === -1 || searchMatches.length === 0) {
@@ -614,75 +630,58 @@
                 return;
             }
             
-            const selectedText = cmEditor.getSelection();
+            // वर्तमान में चुने गए मैच की जानकारी प्राप्त करें
+            const currentMatch = searchMatches[currentMatchIndex];
+            const from = cmEditor.posFromIndex(currentMatch.index);
+            const to = cmEditor.posFromIndex(currentMatch.index + currentMatch.text.length);
+
+            // उस खास मार्क को ढूंढो और हटाओ
+            const marks = cmEditor.findMarks(from, to);
+            marks.forEach(mark => {
+                if (mark.className === 'cm-searched-text') mark.clear();
+            });
+
+            // सीधे टेक्स्ट को बदलें
+            cmEditor.replaceRange(codeToReplace, from, to);
+            updateChangeCounter(1);
+            showCustomAlert('✅ 1 कोड बदल दिया गया है।');
+
+            // नए बदले हुए टेक्स्ट को हरे रंग से मार्क करो
+            const newTo = cmEditor.posFromIndex(cmEditor.indexFromPos(from) + codeToReplace.length);
+            currentMarks.push(cmEditor.markText(from, newTo, { className: 'cm-replaced-text' }));
             
-            if (selectedText === codeToFind) {
-                const from = cmEditor.getCursor('from');
-                const to = cmEditor.getCursor('to');
+            // यह सबसे ज़रूरी है: बदलने के बाद सभी मैचों को फिर से खोजें
+            // क्योंकि एक बदलाव से बाकी सभी मैचों की पोजीशन बदल सकती है।
+            findAndSelectText();
 
-                // उस खास मार्क को ढूंढो और हटाओ
-                const marks = cmEditor.findMarks(from, to);
-                if (marks.length > 0) {
-                    marks.forEach(mark => {
-                        if(mark.className === 'cm-searched-text') mark.clear();
-                    });
-                }
-
-                // कोड को बदलो
-                cmEditor.replaceSelection(codeToReplace);
-                updateChangeCounter(1);
-                showCustomAlert('✅ 1 कोड बदल दिया गया है।'); // <-- यह है इलाज!
-                
-                // नए बदले हुए टेक्स्ट को हरे रंग से मार्क करो
-                const newTo = cmEditor.posFromIndex(cmEditor.indexFromPos(from) + codeToReplace.length);
-                currentMarks.push(cmEditor.markText(from, newTo, { className: 'cm-replaced-text' }));
-
-                // अब सिर्फ डाटा अपडेट करो, दोबारा मत खोजो
-                searchMatches.splice(currentMatchIndex, 1); // बदले हुए मैच को लिस्ट से हटा दो
-
-                if (searchMatches.length === 0) {
-                    // अगर सब बदल गए, तो UI साफ करो
-                    document.getElementById('findNavContainer').style.display = 'none';
-                    document.getElementById('replaceAllBtn').style.display = 'none';
-                    currentMatchIndex = -1;
-                } else {
-                    // अगर और भी हैं, तो अगले वाले पर जाओ
-                    if (currentMatchIndex >= searchMatches.length) {
-                        currentMatchIndex = 0; // अगर आखिरी था, तो पहले पर जाओ
-                    }
-                    highlightCurrentMatch();
-                }
-                updateNavButtons();
-
-            } else {
-                showCustomAlert('बदलने के लिए कृपया सही कोड को चुनें। "खोजें" बटन का उपयोग करें।');
-            }
         }
 
+        // --- UPDATED: replaceAllCode फ़ंक्शन भी अब RegEx पर आधारित है ---
         function replaceAllCode() {
             const codeToFind = document.getElementById('findBlock').value;
             const codeToReplace = document.getElementById('replaceBlock').value;
-            const matchesFound = searchMatches.length;
 
-            if (matchesFound < 1) return;
-            
+            if (!codeToFind) return;
+
             clearAllMarks(); // पुराने सारे रंग हटाओ
 
-            cmEditor.operation(() => { // बहुत सारे बदलाव एक साथ करने के लिए
-                for (let i = searchMatches.length - 1; i >= 0; i--) { // पीछे से शुरू करो ताकि इंडेक्स न बिगड़े
-                    const startIndex = searchMatches[i];
-                    const from = cmEditor.posFromIndex(startIndex);
-                    const to = cmEditor.posFromIndex(startIndex + codeToFind.length);
-                    cmEditor.replaceRange(codeToReplace, from, to);
-                    
-                    // हर बदले हुए कोड को हरे रंग से मार्क करो
-                    const newTo = cmEditor.posFromIndex(startIndex + codeToReplace.length);
-                    currentMarks.push(cmEditor.markText(from, newTo, { className: 'cm-replaced-text' }));
-                }
+            const searchRegex = createSearchRegex(codeToFind);
+            const editorContent = cmEditor.getValue();
+            let matchesFound = 0;
+            
+            // हम एक ही बार में सारे कोड को बदल देंगे
+            const newContent = editorContent.replace(searchRegex, (match) => {
+                matchesFound++;
+                return codeToReplace;
             });
-
-            updateChangeCounter(matchesFound);
-            showCustomAlert(`✅ शानदार! कोड की ${matchesFound} कॉपियां बदल दी गई हैं।`);
+            
+            if (matchesFound > 0) {
+                 cmEditor.setValue(newContent); // एडिटर में नया कंटेंट सेट करें
+                 updateChangeCounter(matchesFound);
+                 showCustomAlert(`✅ शानदार! कोड की ${matchesFound} कॉपियां बदल दी गई हैं।`);
+            } else {
+                 showCustomAlert('कोड नहीं मिला जिसे बदला जा सके।');
+            }
             
             document.getElementById('findNavContainer').style.display = 'none';
             document.getElementById('replaceAllBtn').style.display = 'none';
@@ -691,10 +690,11 @@
         }
 
         function highlightCurrentMatch() {
-            if (currentMatchIndex === -1) return;
-            const codeToFind = document.getElementById('findBlock').value;
-            const startIndex = searchMatches[currentMatchIndex];
-            const endIndex = startIndex + codeToFind.length;
+            if (currentMatchIndex === -1 || !searchMatches[currentMatchIndex]) return;
+            const match = searchMatches[currentMatchIndex];
+            
+            const startIndex = match.index;
+            const endIndex = startIndex + match.text.length;
             
             cmEditor.focus();
             cmEditor.setSelection(cmEditor.posFromIndex(startIndex), cmEditor.posFromIndex(endIndex));
@@ -729,21 +729,11 @@
 
             matchCounter.textContent = `${currentMatchIndex + 1} / ${searchMatches.length}`;
             
-            if (currentMatchIndex <= 0) {
-                prevBtn.classList.remove('active');
-                prevBtn.disabled = true;
-            } else {
-                prevBtn.classList.add('active');
-                prevBtn.disabled = false;
-            }
+            prevBtn.disabled = currentMatchIndex <= 0;
+            prevBtn.classList.toggle('active', currentMatchIndex > 0);
 
-            if (currentMatchIndex >= searchMatches.length - 1) {
-                nextBtn.classList.remove('active');
-                nextBtn.disabled = true;
-            } else {
-                nextBtn.classList.add('active');
-                nextBtn.disabled = false;
-            }
+            nextBtn.disabled = currentMatchIndex >= searchMatches.length - 1;
+            nextBtn.classList.toggle('active', currentMatchIndex < searchMatches.length - 1);
         }
 
         // --- File & Other Functions ---
@@ -836,7 +826,6 @@
             if (window.innerWidth <= 768) { showSection('editor'); }
             updateUndoRedoButtons();
 
-            // Load the change counter from localStorage
             const savedChanges = parseInt(localStorage.getItem('editorTotalChanges') || '0');
             if (savedChanges > 0) {
                 totalChanges = savedChanges;
@@ -845,7 +834,6 @@
                 counterElement.style.display = 'inline-flex';
             }
 
-            // Refresh CodeMirror when its container becomes visible on mobile
             const observer = new MutationObserver(mutations => {
                 for (let mutation of mutations) {
                     if (mutation.attributeName === 'class' && document.getElementById('editorSection').classList.contains('active')) {
@@ -867,7 +855,6 @@
             if (e.key === 'Escape' && sidePanelOpen) { toggleSidePanel(); }
         });
 
-        // Close side panel on outside click
         document.addEventListener('click', (event) => {
             if (sidePanel.classList.contains('open') && !sidePanel.contains(event.target) && !hamburgerMenu.contains(event.target)) {
                 toggleSidePanel();
