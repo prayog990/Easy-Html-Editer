@@ -589,15 +589,7 @@
     function toggleFullScreenPreview() { body.classList.toggle('fullscreen-preview'); }
     function clearInput(elementId) { document.getElementById(elementId).value = ''; }
     
-    // --- Search/Replace Logic for Ace (NOW WITH SMART SEARCH) ---
-    function createSearchRegex(searchText) {
-        // RegEx के स्पेशल कैरेक्टर्स (जैसे ., *, +) को एस्केप करें
-        const escapedText = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        // सभी व्हाइटस्पेस (spaces, newlines, tabs) को \s+ से बदलें
-        const pattern = escapedText.trim().replace(/\s+/g, '\\s+');
-        return new RegExp(pattern, 'g'); // 'g' मतलब ग्लोबल
-    }
-
+    // --- Search/Replace Logic for Ace ---
     function findAndSelectText() {
         const codeToFind = document.getElementById('findBlock').value;
         const findNavContainer = document.getElementById('findNavContainer');
@@ -606,11 +598,7 @@
             showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
             return;
         }
-        
-        // स्मार्ट सर्च के लिए Regex का उपयोग करें
-        const searchRegex = createSearchRegex(codeToFind);
-        const matchesFound = aceEditor.findAll(searchRegex, { regExp: true });
-        
+        const matchesFound = aceEditor.findAll(codeToFind, { regExp: false, caseSensitive: false, wholeWord: false });
         if (matchesFound > 0) {
             if (window.innerWidth <= 768) { showSection('editor'); }
             findNavContainer.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
@@ -622,28 +610,13 @@
         }
     }
     
-    function replaceCodeBlock() { 
-        aceEditor.replace(document.getElementById('replaceBlock').value); 
-        updateChangeCounter(1); 
-    }
+    function replaceCodeBlock() { aceEditor.replace(document.getElementById('replaceBlock').value); updateChangeCounter(1); }
 
     function replaceAllCode() {
         const codeToFind = document.getElementById('findBlock').value;
         const codeToReplace = document.getElementById('replaceBlock').value;
-
-        // सुनिश्चित करें कि खोजने के लिए कुछ है
-        if (!codeToFind) {
-            showCustomAlert('पहले कोड खोजें जिसे आप बदलना चाहते हैं।');
-            return;
-        }
-        
-        // स्मार्ट सर्च के लिए Regex का उपयोग करें
-        const searchRegex = createSearchRegex(codeToFind);
-        const matchesFound = aceEditor.findAll(searchRegex, { regExp: true });
-        
+        const matchesFound = aceEditor.findAll(codeToFind, { regExp: false });
         if (matchesFound > 0) {
-            // ReplaceAll सिर्फ टेक्स्ट के साथ काम करता है, Regex के साथ नहीं।
-            // इसलिए हमें पहले खोजना होगा और फिर बदलना होगा।
             aceEditor.replaceAll(codeToReplace);
             updateChangeCounter(matchesFound);
             showCustomAlert(`✅ शानदार! कोड की ${matchesFound} कॉपियां बदल दी गई हैं।`);
@@ -654,7 +627,6 @@
 
     function findNext() { aceEditor.findNext(); }
     function findPrev() { aceEditor.findPrevious(); }
-    
     // --- File & Other Functions ---
     function uploadFile() { document.getElementById('fileInput').click(); }
     function handleFileUpload(event) {
