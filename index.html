@@ -171,13 +171,15 @@
         .color-swatch.active { border-color: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); }
 
         /* --- Styles for Marked/Highlighted Text --- */
-        .cm-searched-text {
-            color: #50A6FF !important; /* चमकदार नीला */
-            font-weight: bold;
+        .green-marker {
+            position: absolute;
+            background-color: rgba(48, 209, 88, 0.5); /* हरा रंग (Replaced Text) */
+            z-index: 20;
         }
-        .cm-replaced-text {
-            color: #50FF70 !important; /* चमकदार हरा */
-            font-weight: bold;
+
+        /* --- Blue Highlight for Searched/Selected Text --- */
+        .ace_marker-layer .ace_selection {
+            background: rgba(80, 166, 255, 0.6) !important; /* नीला रंग (Searched Text) */
         }
 
         /* --- New Change Counter Style --- */
@@ -591,6 +593,7 @@
     
     // --- Search/Replace Logic for Ace ---
     function findAndSelectText() {
+        clearAllMarks(); // पुराने हाइलाइट्स हटाएं
         const codeToFind = document.getElementById('findBlock').value;
         const findNavContainer = document.getElementById('findNavContainer');
         const replaceAllBtn = document.getElementById('replaceAllBtn');
@@ -601,8 +604,17 @@
         const matchesFound = aceEditor.findAll(codeToFind, { regExp: false, caseSensitive: false, wholeWord: false });
         if (matchesFound > 0) {
             if (window.innerWidth <= 768) { showSection('editor'); }
+            
+            // CHANGE: अब Replace All बटन सिर्फ तब दिखेगा जब 1 से ज्यादा मैच हों
             findNavContainer.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
-            replaceAllBtn.style.display = 'inline-flex';
+            replaceAllBtn.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
+            
+            // Fix: Scroll to the first match
+            const ranges = aceEditor.selection.getAllRanges();
+            if(ranges.length > 0) {
+                ranges.sort((a, b) => a.start.row - b.start.row);
+                aceEditor.scrollToLine(ranges[0].start.row, true, true, function() {});
+            }
         } else {
             showCustomAlert('कोड नहीं मिला।');
             findNavContainer.style.display = 'none';
@@ -610,7 +622,31 @@
         }
     }
     
-    function replaceCodeBlock() { aceEditor.replace(document.getElementById('replaceBlock').value); updateChangeCounter(1); }
+    function replaceCodeBlock() {
+        const Range = ace.require('ace/range').Range;
+        const newText = document.getElementById('replaceBlock').value;
+        const currentRange = aceEditor.getSelectionRange();
+        
+        if (!currentRange || aceEditor.selection.isEmpty()) {
+             showCustomAlert('पहले "खोजें" बटन दबाकर टेक्स्ट सिलेक्ट करें।');
+             return;
+        }
+
+        clearAllMarks(); // पुराने मार्कर हटाएं
+        
+        const startRow = currentRange.start.row;
+        const startCol = currentRange.start.column;
+
+        aceEditor.replace(newText); // टेक्स्ट बदलें
+        updateChangeCounter(1);
+
+        const endPos = aceEditor.getCursorPosition();
+        const newRange = new Range(startRow, startCol, endPos.row, endPos.column);
+        
+        // हरा मार्कर लगाएं
+        const markerId = aceEditor.session.addMarker(newRange, "green-marker", "text");
+        currentMarkers.push(markerId);
+    }
 
     function replaceAllCode() {
         const codeToFind = document.getElementById('findBlock').value;
