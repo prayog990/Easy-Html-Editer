@@ -419,6 +419,20 @@
         </div>
     </div>
 
+    <!-- Rename & Download Modal -->
+    <div class="modal-overlay" id="renameModal">
+        <div class="modal-box">
+            <h4 style="margin-bottom: 15px; color: var(--accent-color);">फाइल का नाम (Rename)</h4>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="renameInput" style="width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-color); border-radius: 5px; outline: none; font-size: 14px;">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeRenameModal()">Cancel</button>
+                <button class="btn" onclick="confirmDownload()"><i class="fas fa-download"></i> Download</button>
+            </div>
+        </div>
+    </div>
+
         <script>
     // --- NEW: Ace Editor Setup ---
     const editorElement = document.getElementById('codeEditor');
@@ -690,14 +704,58 @@
     }
 
     function downloadFile() {
-        const fileName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '').trim() || 'index.html';
+        // 1. मौजूदा फाइल का नाम लें
+        const currentName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '').trim() || 'index.html';
+        
+        // 2. इनपुट बॉक्स में वो नाम भरें
+        const inputField = document.getElementById('renameInput');
+        inputField.value = currentName;
+        
+        // 3. मोडल (बॉक्स) दिखाएं
+        document.getElementById('renameModal').style.display = 'flex';
+        
+        // 4. इनपुट पर फोकस करें और सारा टेक्स्ट सिलेक्ट करें (आसान रिनेमिंग के लिए)
+        setTimeout(() => {
+            inputField.focus();
+            inputField.select();
+        }, 100);
+    }
+
+    function closeRenameModal() {
+        document.getElementById('renameModal').style.display = 'none';
+    }
+
+    function confirmDownload() {
+        // 1. नया नाम उठाएं
+        let fileName = document.getElementById('renameInput').value.trim();
+        if (!fileName) fileName = 'index.html';
+        
+        // 2. अगर एक्सटेंशन (.html) नहीं लगाया है, तो अपने आप लगा दें
+        if (!fileName.includes('.')) fileName += '.html';
+
+        // 3. डाउनलोड प्रोसेस शुरू करें
         const blob = new Blob([aceEditor.getValue()], { type: 'text/html' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = fileName;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
+
+        // 4. मोडल बंद करें
+        closeRenameModal();
+        
+        // 5. फाइल का नाम UI में भी अपडेट कर दें
+        document.getElementById('fileNameSP').textContent = `फाइल: ${fileName}`;
     }
+
+    // Enter Key दबाने पर डाउनलोड हो जाए (UX के लिए)
+    document.getElementById('renameInput').addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+            confirmDownload();
+        }
+    });
 
     function openPreview() {
         try {
