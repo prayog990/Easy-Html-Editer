@@ -282,7 +282,10 @@
     <!-- Search and Replace Toolbar -->
     <div class="toolbar">
         <div class="input-container">
-            <label for="findBlock"><i class="fas fa-search"></i> इस कोड को खोजें (Find this code):</label>
+            <label for="findBlock">
+                <i class="fas fa-search"></i> इस कोड को खोजें: 
+                <span id="uploadedFileName" style="color: var(--accent-color); margin-left: 5px; font-weight: bold; font-size: 13px;"></span>
+            </label>
             <div class="textarea-wrapper">
                 <textarea id="findBlock" placeholder="यहाँ पुराना कोड पेस्ट करें..."></textarea>
                 <button class="btn-clear" onclick="clearInput('findBlock')" title="Clear">×</button>
@@ -687,6 +690,11 @@
                 showSection('editor'); 
                 aceEditor.setValue(e.target.result, -1);
                 document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
+                
+                // Show filename in Find Box Label
+                const findLabelName = document.getElementById('uploadedFileName');
+                if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${file.name}`;
+
                 resetChangeCounter();
                 setTimeout(() => { aceEditor.resize(); }, 100); // Increased timeout for safety
             };
