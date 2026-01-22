@@ -282,9 +282,9 @@
     <!-- Search and Replace Toolbar -->
     <div class="toolbar">
         <div class="input-container">
-            <label for="findBlock">
-                <i class="fas fa-search"></i> इस कोड को खोजें: 
-                <span id="uploadedFileName" style="color: var(--accent-color); margin-left: 5px; font-weight: bold; font-size: 13px;"></span>
+            <label for="findBlock" style="display: flex; justify-content: space-between; align-items: center;">
+                <span><i class="fas fa-search"></i> इस कोड को खोजें:</span> 
+                <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 13px;"></span>
             </label>
             <div class="textarea-wrapper">
                 <textarea id="findBlock" placeholder="यहाँ पुराना कोड पेस्ट करें..."></textarea>
@@ -450,6 +450,7 @@
     let currentMatchIndex = -1;
     let totalChanges = 0;
     let currentMarkers = []; // To keep track of Ace markers
+    let originalFileName = 'index.html'; // Original file name memory
 
     // --- THEME MANAGEMENT ---
     function setLightDark(mode) {
@@ -565,7 +566,15 @@
         document.querySelectorAll('#redoBtnSP, #redoBtnFT').forEach(btn => btn.disabled = !undoManager.hasRedo());
     }
 
-    function undo() { if (aceEditor) aceEditor.undo(); }
+    function undo() { 
+        if (aceEditor) {
+            aceEditor.undo();
+            // Agar Counter 0 se bada hai, tabhi 1 ghatao (Safety Lock)
+            if (totalChanges > 0) {
+                updateChangeCounter(-1);
+            }
+        }
+    }
     function redo() { if (aceEditor) aceEditor.redo(); }
 
     function clearAllMarks() {
@@ -577,6 +586,8 @@
     function updateChangeCounter(count) {
         totalChanges += count;
         const counterElement = document.getElementById('changeCounter');
+        
+        // 1. Counter Update Logic
         if (totalChanges > 0) {
             counterElement.innerHTML = `<i class="fas fa-sync-alt"></i> ${totalChanges}`;
             counterElement.style.display = 'inline-flex';
@@ -584,6 +595,27 @@
             counterElement.style.display = 'none';
         }
         localStorage.setItem('editorTotalChanges', totalChanges);
+
+        // 2. Smart Filename Update Logic
+        if (originalFileName) {
+            let display = originalFileName;
+            if (totalChanges > 0) {
+                const lastDotIndex = originalFileName.lastIndexOf('.');
+                if (lastDotIndex !== -1) {
+                    // Extension se pehle number lagana (e.g., file.1.html)
+                    const namePart = originalFileName.substring(0, lastDotIndex);
+                    const extPart = originalFileName.substring(lastDotIndex); 
+                    display = `${namePart}.${totalChanges}${extPart}`;
+                } else {
+                    display = `${originalFileName}.${totalChanges}`;
+                }
+            }
+            
+            // Update UI (Sidebar and Find Label)
+            document.getElementById('fileNameSP').textContent = `फाइल: ${display}`;
+            const findLabelName = document.getElementById('uploadedFileName');
+            if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${display}`;
+        }
     }
 
     function resetChangeCounter() {
@@ -671,7 +703,8 @@
         const matchesFound = aceEditor.findAll(codeToFind, { regExp: false });
         if (matchesFound > 0) {
             aceEditor.replaceAll(codeToReplace);
-            updateChangeCounter(matchesFound);
+            // Counter sirf 1 badhega (Action Count)
+            updateChangeCounter(1);
             showCustomAlert(`✅ शानदार! कोड की ${matchesFound} कॉपियां बदल दी गई हैं।`);
         } else {
             showCustomAlert('कुछ भी बदलने के लिए नहीं मिला।');
@@ -689,6 +722,10 @@
             reader.onload = (e) => {
                 showSection('editor'); 
                 aceEditor.setValue(e.target.result, -1);
+                
+                // Save Original Name
+                originalFileName = file.name;
+
                 document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
                 
                 // Show filename in Find Box Label
@@ -696,7 +733,7 @@
                 if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${file.name}`;
 
                 resetChangeCounter();
-                setTimeout(() => { aceEditor.resize(); }, 100); // Increased timeout for safety
+                setTimeout(() => { aceEditor.resize(); }, 100); 
             };
             reader.readAsText(file);
         }
