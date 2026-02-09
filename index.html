@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Html Editor</title>
+    <title>Easy Html Editor v3.0</title>
     <!-- Ace Editor Library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ace.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ext-language_tools.min.js"></script>
+    <!-- JS-Beautify for Magic Wand (Formatting) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-html.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -40,51 +42,176 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* --- Premium Slim Scrollbar --- */
+        ::-webkit-scrollbar {
+            width: 5px; height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(150, 150, 150, 0.2);
+            border-radius: 20px;
+            background-clip: content-box;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(150, 150, 150, 0.2) transparent;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-color); color: var(--text-color);
             overflow: hidden; display: flex; flex-direction: column; height: 100vh;
+            scrollbar-gutter: stable;
         }
+
+        /* --- Grand Entry Splash Screen --- */
+        #appSplashScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #121212; z-index: 99999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+        }
+        .splash-content { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .splash-icon {
+            font-size: 50px; color: #007aff;
+            filter: drop-shadow(0 0 15px rgba(0, 122, 255, 0.6));
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        #appSplashScreen h1 {
+            font-size: 24px; font-weight: 800; color: white; margin: 0;
+            background: linear-gradient(90deg, #007aff, #00c6ff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: 1px; opacity: 0; animation: fadeInText 0.8s ease-out forwards 0.3s;
+        }
+        .loading-bar {
+            width: 150px; height: 4px; background: rgba(255,255,255,0.1);
+            border-radius: 4px; overflow: hidden; margin-top: 10px; opacity: 0;
+            animation: fadeInText 0.8s ease-out forwards 0.5s;
+        }
+        .bar-fill {
+            width: 0%; height: 100%; background: #007aff;
+            box-shadow: 0 0 10px #007aff;
+            animation: loadBar 2s ease-in-out forwards;
+        }
+        @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes fadeInText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes loadBar { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
+
+        /* --- Header --- */
         .header {
-            background: var(--header-color); border-bottom: 1px solid var(--border-color); padding: 10px 20px;
+            background: rgba(26, 26, 26, 0.8); /* Default Dark Glass */
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-bottom: 2px solid var(--accent-color);
+            padding: 0 20px;
             display: flex; justify-content: space-between; align-items: center; height: 50px; flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 1001;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* --- Light Mode Header Fix (Day Theme Ilaz) --- */
+        body.light-theme .header {
+            background: rgba(255, 255, 255, 0.85); /* Frosted White */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Soft Shadow */
+            border-bottom: 2px solid var(--accent-color);
+        }
+        /* Fix Hamburger Menu Box in Light Mode */
+        body.light-theme .hamburger-menu {
+            background: transparent !important;
+            color: #333 !important;
         }
         .header h1 {
-            font-size: 20px; font-weight: bold; background: linear-gradient(90deg, var(--accent-color), #61dafb);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-fill-color: transparent;
+            font-size: 20px; font-weight: bold; letter-spacing: 0.5px;
+            background: linear-gradient(90deg, var(--accent-color), #61dafb);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(var(--accent-color-rgb, 0, 122, 255), 0.2);
         }
         .theme-toggle {
             background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: background 0.3s; font-size: 12px;
         }
+        
+        /* --- Buttons --- */
         .btn {
-            background: var(--accent-color); border: none; color: white; padding: 8px 12px; border-radius: 4px;
-            cursor: pointer; font-size: 13px; transition: background 0.3s; white-space: nowrap; display: inline-flex;
-            align-items: center; justify-content: center; gap: 8px; font-weight: 500;
+            background: linear-gradient(145deg, var(--accent-color), var(--accent-hover-color)); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: white; padding: 10px 16px; border-radius: 8px;
+            cursor: pointer; font-size: 13px; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            white-space: nowrap; display: inline-flex;
+            align-items: center; justify-content: center; gap: 8px; font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
-        .btn:hover { background: var(--accent-hover-color); }
-        .btn-action-primary { min-width: 120px; } /* बटनों का साइज़ बराबर करने के लिए */
+        .btn:hover { 
+            filter: brightness(1.15);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.35);
+            transform: translateY(-1.5px);
+        }
+        .btn:active {
+            transform: translateY(1px) scale(0.97);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            filter: brightness(0.9);
+        }
+        .btn-action-primary { min-width: 130px; letter-spacing: 0.3px; }
         .btn:disabled { background: #555; color: #999; cursor: not-allowed; }
         body.light-theme .btn:disabled { background: #e0e0e0; color: #aaa; }
         .btn-danger { background: var(--accent-danger-color); }
         .btn-success { background: var(--accent-success-color); }
         .btn-warning { background: var(--accent-warning-color); }
+
+        /* --- Toolbar --- */
         .toolbar {
-            background: var(--surface-color); border-bottom: 1px solid var(--border-color); padding: 10px 15px;
-            display: flex; gap: 15px; flex-wrap: wrap;
+            background: var(--surface-color); 
+            border-bottom: 1px solid var(--border-color); 
+            padding: 8px 15px;
+            display: flex; gap: 10px; flex-wrap: wrap;
+            box-shadow: inset 0px -5px 15px rgba(0,0,0,0.2);
         }
-        .input-container { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 5px; }
-        .input-container label { font-size: 12px; color: var(--text-muted-color); font-weight: 500; }
+        .input-container { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 4px; }
+        .input-container label { font-size: 11px; color: var(--accent-color); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
         .textarea-wrapper { position: relative; width: 100%; }
         .input-container textarea {
-            width: 100%; height: 70px; resize: vertical; font-family: 'Monaco', monospace; background: var(--input-bg);
-            border: 1px solid var(--input-border); color: var(--text-color); padding: 8px 28px 8px 8px;
-            border-radius: 3px; font-size: 13px;
+            width: 100%; height: 62px;
+            resize: none; font-family: 'Monaco', 'Menlo', monospace; 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1.2px solid var(--input-border); 
+            color: #ffffff; padding: 8px 30px 8px 10px;
+            border-radius: 6px; font-size: 12px;
+            transition: all 0.2s ease; outline: none;
+        }
+        
+        /* Light Mode Input Fix */
+        body.light-theme .input-container textarea {
+            background: rgba(0, 0, 0, 0.06); /* हल्का ग्रे */
+            border-color: rgba(0, 0, 0, 0.2);
+            color: #333333; /* गहरा काला टेक्स्ट */
+        }
+        body.light-theme .input-container textarea:focus {
+            background: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 8px rgba(0, 122, 255, 0.2);
+        }
+        .input-container textarea:focus {
+            border-color: var(--accent-color);
+            background: rgba(0, 0, 0, 0.45);
+            box-shadow: 0 0 12px rgba(var(--accent-color-rgb, 0, 122, 255), 0.4); /* Pro Neon Glow */
+            transform: translateY(-1.5px);
         }
         .btn-clear {
             position: absolute; top: 50%; transform: translateY(-50%); right: 5px; background: none; border: none;
             color: #999; font-size: 20px; cursor: pointer; z-index: 5;
         }
         .btn-clear:hover { color: var(--text-color); }
+
+        /* --- Editor & Preview Layout --- */
         .main-container { display: flex; flex: 1; overflow: hidden; }
         .editor-section, .preview-section { display: flex; flex-direction: column; width: 50%; height: 100%; }
         .section-header {
@@ -92,20 +219,32 @@
             border-bottom: 1px solid var(--border-color); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
         }
         body.light-theme .section-header { background: #f0f0f0; }
+        
         .btn-icon {
-            background: none; border: 1px solid var(--accent-danger-color); color: var(--accent-danger-color);
-            padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; transition: all 0.2s;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-muted-color);
+            padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; justify-content: center;
         }
-        .btn-icon:hover { background: var(--accent-danger-color); color: white; }
+        .btn-icon:hover { 
+            background: var(--accent-color); color: white; border-color: var(--accent-color); 
+            transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn-icon.danger-icon:hover { 
+            background: var(--accent-danger-color); border-color: var(--accent-danger-color); 
+            box-shadow: 0 4px 10px rgba(255, 69, 58, 0.3);
+        }
+
         .editor-container { flex: 1; position: relative; overflow: hidden; }
-        
-        .CodeMirror {
-            font-family: 'Monaco', 'Menlo', monospace; font-size: 14px;
-            line-height: 1.5; height: 100%; width: 100%;
-        }
-        body.light-theme .CodeMirror { background: var(--editor-bg); color: var(--text-color); }
         .code-editor { height: 100%; width: 100%; }
-        
+
+        /* --- Ace Editor Customization --- */
+        .ace_gutter { background: rgba(0,0,0,0.1) !important; color: var(--text-muted-color) !important; border-right: 1px solid rgba(255,255,255,0.05); }
+        .ace_active-line { background: rgba(150, 150, 150, 0.1) !important; }
+        .ace_gutter-active-line { background: var(--accent-color) !important; color: white !important; }
+        .ace_cursor { border-left: 2px solid var(--accent-color) !important; }
+        .ace_marker-layer .ace_selection { background: var(--accent-color) !important; opacity: 0.3 !important; }
+        .ace_indent-guide { opacity: 0.3; }
+
         .preview-section { border-left: 1px solid var(--border-color); }
         .preview-header {
             background: #333; padding: 8px 15px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--border-color);
@@ -115,8 +254,25 @@
         .live-indicator { color: var(--accent-success-color); font-size: 11px; display: flex; align-items: center; gap: 5px; }
         .live-dot { width: 8px; height: 8px; background: var(--accent-success-color); border-radius: 50%; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .preview-frame { flex: 1; border: none; background: white; width: 100%; height: 100%; }
+        .preview-frame { 
+            flex: 1; border: none; background: white; 
+            width: 100%; height: 100%; 
+            transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 0 auto; /* सेंटर में रखने के लिए */
+        }
+        
+        /* Device Switcher Buttons */
+        .device-switcher { display: flex; gap: 5px; background: rgba(0,0,0,0.2); padding: 3px; border-radius: 8px; }
+        .device-btn {
+            background: transparent; border: none; color: var(--text-muted-color);
+            width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .device-btn.active { background: var(--accent-color); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .device-btn:hover:not(.active) { background: rgba(255,255,255,0.1); }
+
         .hidden-file-input { display: none; }
+        
         .fullscreen-btn {
             background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 10px;
             border-radius: 4px; cursor: pointer; font-size: 14px;
@@ -125,11 +281,12 @@
         body.fullscreen-preview .editor-section, body.fullscreen-preview .footer-toolbar, body.fullscreen-preview .side-panel { display: none; }
         body.fullscreen-preview .main-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; }
         body.fullscreen-preview .preview-section { width: 100%; height: 100%; border-left: none; }
+        body.side-panel-open { overflow: hidden; }
         .fullscreen-btn .fa-compress { display: none; }
         body.fullscreen-preview .fullscreen-btn .fa-expand { display: none; }
         body.fullscreen-preview .fullscreen-btn .fa-compress { display: inline-block; }
 
-        .find-nav-container { display: none; /* margin-left हटा दिया गया है */ }
+        .find-nav-container { display: none; }
         .btn-nav {
             background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-muted-color);
             padding: 5px 10px; font-size: 14px; border-radius: 4px; cursor: pointer;
@@ -139,81 +296,279 @@
         .btn-nav:disabled { color: #555; cursor: not-allowed; }
         #replaceAllBtn { display: none; margin-left: 10px; }
         
+        /* --- Universal Side Panel --- */
+        .side-panel {
+            position: fixed; top: 0; right: -320px; width: 280px; height: 100vh; 
+            background: rgba(30, 30, 30, 0.85); /* Premium Glass Look */
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255,255,255,0.1); 
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 2000;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; flex-direction: column;
+        }
+        body.light-theme .side-panel { background: rgba(255, 255, 255, 0.85); }
+        .side-panel.open { right: 0; }
+        .side-panel-header {
+            background: rgba(0,0,0,0.2); padding: 18px 20px; display: flex; justify-content: space-between;
+            align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
+        }
+        .side-panel-header h3 { font-size: 18px; font-weight: 700; color: var(--accent-color); letter-spacing: 0.5px; }
+        .side-panel .btn-close { background: rgba(255,255,255,0.05); border: none; color: var(--text-color); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
+        .side-panel .btn-close:hover { background: var(--accent-danger-color); color: white; transform: rotate(90deg); }
+        .side-panel-content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .side-panel .btn { 
+            width: 100%; justify-content: flex-start; padding: 12px 15px; 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); 
+            color: var(--text-color); /* टेक्स्ट का रंग थीम के हिसाब से बदलेगा */
+            border-radius: 12px; font-weight: 500;
+        }
+        /* Light Mode में बटनों को गहरा (Darker) करना */
+        body.light-theme .side-panel .btn {
+            background: rgba(0,0,0,0.05); /* हल्का काला टिंट */
+            border-color: rgba(0,0,0,0.1);
+            color: #333;
+        }
+        body.light-theme .side-panel .btn:hover { background: rgba(0,0,0,0.1); }
+        .side-panel .btn i { width: 25px; font-size: 16px; }
+        .side-panel .btn i.fa-undo { color: #ff9f0a; }
+        .side-panel .btn i.fa-redo { color: #30d158; }
+        .side-panel .btn i.fa-folder-open { color: #007aff; }
+        .side-panel .btn i.fa-download { color: #32ade6; }
+        .side-panel .btn i.fa-external-link-alt { color: #af52de; }
+        .side-panel .btn i.fa-trash { color: #ff453a; }
+
+        /* --- Universal Footer Toolbar --- */
+        .footer-toolbar {
+            display: none; justify-content: space-around; align-items: center; 
+            background: rgba(25, 25, 25, 0.85); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255,255,255,0.1); 
+            height: 65px; flex-shrink: 0; padding: 0 12px; gap: 10px;
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .footer-toolbar .btn { 
+            flex: 1; padding: 12px 5px; font-size: 13px; 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; color: var(--text-muted-color);
+        }
+        .footer-toolbar .btn:first-child {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover-color));
+            color: white; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 1px; border: none;
+            box-shadow: 0 4px 15px var(--accent-color);
+            animation: runPulse 2s infinite;
+        }
+        @keyframes runPulse {
+            0% { box-shadow: 0 0 8px var(--accent-color); transform: scale(1); }
+            50% { box-shadow: 0 0 20px var(--accent-color); transform: scale(1.02); }
+            100% { box-shadow: 0 0 8px var(--accent-color); transform: scale(1); }
+        }
+
+        /* --- Modals --- */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7);
-            z-index: 5000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 5000; display: none; justify-content: center; align-items: center; 
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            transition: all 0.3s ease;
         }
         .modal-box {
-            background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-color);
-            padding: 25px; border-radius: 10px; max-width: 90%; width: 350px; text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4); animation: fadeInModal 0.3s ease-out;
+            background: var(--surface-color); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: var(--text-color);
+            padding: 28px; border-radius: 20px;
+            max-width: 85%; width: 340px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
+            animation: modernPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        @keyframes fadeInModal { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        .modal-box p { margin-bottom: 20px; font-size: 16px; line-height: 1.5; }
-        .modal-buttons { display: flex; justify-content: center; gap: 10px; }
-        .modal-buttons .btn { flex: 1; }
-        .modal-buttons .btn-secondary { background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); }
-        .modal-buttons .btn-secondary:hover { background: var(--border-color); }
+        @keyframes modernPop { 
+            from { opacity: 0; transform: scale(0.8) translateY(20px); } 
+            to { opacity: 1; transform: scale(1) translateY(0); } 
+        }
+        .modal-box p { margin-bottom: 24px; font-size: 15px; line-height: 1.6; font-weight: 500; opacity: 0.9; }
+        .modal-buttons { display: flex; justify-content: center; gap: 12px; }
+        .modal-buttons .btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px; }
+        .modal-buttons .btn-secondary { 
+            background: rgba(255,255,255,0.05); 
+            color: var(--text-color); 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        .modal-buttons .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: none; }
 
-        .theme-chooser { padding-top: 10px; border-top: 1px solid var(--border-color); }
-        .theme-chooser h4 { font-size: 14px; color: var(--text-muted-color); margin-bottom: 10px; text-align: center; }
-        .light-dark-toggle { display: flex; border: 1px solid var(--border-color); border-radius: 5px; margin-bottom: 15px; }
-        .light-dark-toggle button {
-            flex: 1; background: transparent; border: none; color: var(--text-muted-color); padding: 8px; cursor: pointer;
+        /* --- Toast System --- */
+        .toast-container {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;
         }
-        .light-dark-toggle button.active { background: var(--accent-color); color: white; }
-        .accent-colors { display: flex; justify-content: space-around; }
+        .toast {
+            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            color: white; padding: 12px 24px; border-radius: 50px; font-size: 13px; font-weight: 600;
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1); border-bottom: 2px solid var(--accent-color);
+            animation: toastSlideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: nowrap;
+        }
+        @keyframes toastSlideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.8); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .toast.fade-out { opacity: 0; transform: translateY(-20px) scale(0.9); transition: 0.5s; }
+
+        /* --- Theme Chooser --- */
+        .theme-chooser { 
+            margin-top: 15px; padding: 15px; 
+            background: rgba(0,0,0,0.2); 
+            border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);
+        }
+        /* Light Mode में बॉक्स का रंग ठीक करना */
+        body.light-theme .theme-chooser {
+            background: rgba(0,0,0,0.05);
+            border-color: rgba(0,0,0,0.1);
+        }
+
+        .theme-chooser h4 { font-size: 11px; color: var(--text-muted-color); margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; opacity: 0.7; }
+        
+        .light-dark-toggle { display: flex; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Light Mode में टॉगल का रंग ठीक करना */
+        body.light-theme .light-dark-toggle {
+            background: rgba(0,0,0,0.05);
+            border-color: rgba(0,0,0,0.1);
+        }
+        .light-dark-toggle button {
+            flex: 1; background: transparent; border: none; color: var(--text-muted-color); padding: 10px; cursor: pointer; border-radius: 10px; transition: 0.3s;
+        }
+        .light-dark-toggle button.active { background: var(--accent-color); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .accent-colors { 
+            display: flex; 
+            gap: 12px; 
+            overflow-x: auto; 
+            padding: 5px 5px 15px 5px; 
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+            scroll-snap-type: x mandatory;
+        }
+        .accent-colors::-webkit-scrollbar { display: none; }
         .color-swatch {
-            width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid var(--border-color);
-            transition: transform 0.2s;
+            flex-shrink: 0;
+            width: 34px; height: 34px; border-radius: 10px; cursor: pointer; 
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            scroll-snap-align: start;
+        }
+        .color-swatch:hover { transform: scale(1.15); filter: brightness(1.2); }
+        .color-swatch.active { 
+            border: 2px solid white; 
+            box-shadow: 0 0 15px var(--accent-color);
+            transform: scale(1.1);
         }
         .color-swatch:hover { transform: scale(1.1); }
         .color-swatch.active { border-color: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); }
 
-        /* --- Styles for Marked/Highlighted Text --- */
+        /* --- Markers & Highlights --- */
         .green-marker {
             position: absolute;
-            background-color: rgba(48, 209, 88, 0.5); /* हरा रंग (Replaced Text) */
+            background-color: rgba(48, 209, 88, 0.35); 
             z-index: 20;
+            border-radius: 4px;
+            animation: highlightFlash 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        /* --- Blue Highlight for Searched/Selected Text --- */
+        @keyframes highlightFlash {
+            0% { background-color: rgba(48, 209, 88, 0.9); transform: scale(1.02); }
+            50% { background-color: rgba(48, 209, 88, 0.5); }
+            100% { background-color: rgba(48, 209, 88, 0.3); transform: scale(1); }
+        }
         .ace_marker-layer .ace_selection {
-            background: rgba(80, 166, 255, 0.6) !important; /* नीला रंग (Searched Text) */
+            background: rgba(0, 122, 255, 0.35) !important;
+            box-shadow: 0 0 12px rgba(0, 122, 255, 0.6);
+            border-radius: 3px;
+            border: 1px solid rgba(0, 122, 255, 0.5);
+        }
+        .ace_search_marker {
+            background: rgba(255, 159, 10, 0.2) !important; 
+            border: 1px solid rgba(255, 159, 10, 0.4);
+            border-radius: 2px;
         }
 
-        /* --- New Change Counter Style --- */
+        /* सर्च मैच को फोकस करने के लिए ग्लो एनीमेशन */
+        .current-match-glow {
+            position: absolute;
+            background-color: rgba(255, 159, 10, 0.5);
+            z-index: 20;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(255, 159, 10, 0.8);
+            animation: matchFocusGlow 1.5s ease-out forwards;
+        }
+        @keyframes matchFocusGlow {
+            0% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 0; transform: scale(1); }
+        }
+
+        /* --- Change Counter Badge --- */
         .change-counter {
-            font-size: 14px;
-            color: var(--text-muted-color);
-            font-weight: 500;
-            display: none; /* Initially hidden */
+            font-size: 11px;
+            color: white;
+            font-weight: 800;
+            display: none;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover-color));
+            padding: 4px 10px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .change-counter.bump {
+            animation: counterBump 0.4s ease-out;
+        }
+        @keyframes counterBump {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); filter: brightness(1.3); }
+            100% { transform: scale(1); }
         }
 
+        /* --- Mobile Responsive --- */
         @media (max-width: 768px) {
+            /* कीबोर्ड खुलने पर फालतू चीजें छिपाने के लिए */
+            body.keyboard-open .footer-toolbar, 
+            body.keyboard-open .tab-bar, 
+            body.keyboard-open .header,
+            body.keyboard-open #toolbar-slider { display: none !important; }
+            /* एडिटर को कीबोर्ड के ऊपर पूरी जगह देने के लिए */
+            body.keyboard-open .main-container { flex: 1; height: auto; }
+            body.keyboard-open .quick-symbol-bar { border-top: 1px solid var(--border-color); background: var(--surface-color); }
+
             .header h1 { font-size: 18px; }
+            
+            /* Quick Symbol Bar Styles */
+            .quick-symbol-bar {
+                display: flex; gap: 8px; padding: 6px 10px;
+                background: var(--surface-color); border-bottom: 1px solid var(--border-color);
+                overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+                flex-shrink: 0;
+            }
+            .quick-symbol-bar::-webkit-scrollbar { display: none; }
+            .symbol-btn {
+                background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);
+                color: var(--accent-color); padding: 6px 14px; border-radius: 8px;
+                font-family: 'Monaco', monospace; font-weight: bold; cursor: pointer; font-size: 16px;
+                transition: all 0.2s; min-width: 42px; text-align: center; border-bottom: 2px solid rgba(0,0,0,0.2);
+            }
+            .symbol-btn:active { background: var(--accent-color); color: white; transform: translateY(2px); border-bottom: 0; }
+            body.light-theme .symbol-btn { background: #fff; border-color: #ddd; }
+
+            .header .theme-toggle { display: none; }
             .main-container { flex-direction: column; }
             .editor-section, .preview-section { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: none; }
             .editor-section.active, .preview-section.active { display: flex; position: relative; }
             .preview-section { border-left: none; }
+            
             .hamburger-menu { display: block; background: var(--header-color); color: var(--text-color); border: none; font-size: 20px; padding: 0 10px; cursor: pointer; position: absolute; right: 10px; top: 15px; z-index: 1100; }
-            .header .theme-toggle { display: none; }
-            .side-panel {
-                position: fixed; top: 0; right: -300px; width: 250px; height: 100vh; background: var(--bg-color);
-                border-left: 1px solid var(--border-color); box-shadow: -5px 0 15px rgba(0,0,0,0.3); z-index: 1000;
-                transition: right 0.3s ease-in-out; display: flex; flex-direction: column;
-            }
-            .side-panel.open { right: 0; }
-            .side-panel-header {
-                background: var(--header-color); padding: 10px 15px; display: flex; justify-content: space-between;
-                align-items: center; border-bottom: 1px solid var(--border-color); flex-shrink: 0;
-            }
-            .side-panel-header h3 { font-size: 16px; color: var(--accent-color); }
-            .side-panel .btn-close { background: none; border: none; color: var(--text-color); font-size: 20px; cursor: pointer; }
-            .side-panel-content { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-            .side-panel .btn { width: 100%; justify-content: flex-start; }
+            
             .tab-bar {
                 display: flex; justify-content: space-around; background: var(--surface-color);
                 border-bottom: 1px solid var(--border-color); height: 45px; flex-shrink: 0;
@@ -223,51 +578,36 @@
                 font-size: 14px; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent;
             }
             .tab-button.active { border-bottom-color: var(--accent-color); color: var(--accent-color); }
-            .footer-toolbar {
-                display: flex; justify-content: space-around; align-items: center; background: var(--surface-color);
-                border-top: 1px solid var(--border-color); height: 55px; flex-shrink: 0; padding: 0 10px; gap: 5px;
-            }
-            .footer-toolbar .btn { flex: 1; padding: 8px 5px; font-size: 12px; }
+            
             .toolbar { flex-direction: column; }
+            
+            /* Toolbar Slider Logic */
+            #toolbar-slider { display: block; }
+            .footer-toolbar { display: flex; }
+            .toolbar { transition: all 0.3s ease; max-height: 500px; overflow: hidden; }
+            body.toolbar-collapsed .toolbar { max-height: 0; padding-top: 0; padding-bottom: 0; border-bottom: none; }
+            body.toolbar-collapsed #toolbar-slider i { transform: rotate(180deg); }
         }
-    /* --- Toolbar Slider Styles --- */
-    #toolbar-slider {
-        display: none; /* यह डेस्कटॉप पर छिपा रहेगा */
-        background: var(--surface-color);
-        padding: 4px 0;
-        text-align: center;
-        cursor: pointer;
-        border-bottom: 1px solid var(--border-color);
-        color: var(--text-muted-color);
-        position: relative;
-        z-index: 10;
-    }
-    #toolbar-slider i {
-        transition: transform 0.3s ease;
-    }
-
-    @media (max-width: 768px) {
+        
         #toolbar-slider {
-            display: block; /* यह सिर्फ मोबाइल पर दिखेगा */
+            display: none; background: var(--surface-color); padding: 4px 0;
+            text-align: center; cursor: pointer; border-bottom: 1px solid var(--border-color);
+            color: var(--text-muted-color); position: relative; z-index: 10;
         }
-        .toolbar {
-            transition: all 0.3s ease;
-            max-height: 500px; /* Transition के लिए */
-            overflow: hidden;
-        }
-        body.toolbar-collapsed .toolbar {
-            max-height: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-        body.toolbar-collapsed #toolbar-slider i {
-            transform: rotate(180deg); /* आइकन को घुमाओ */
-        }
-    }
-</style>
+        #toolbar-slider i { transition: transform 0.3s ease; }
+
+    </style>
 </head>
 <body>
+    <!-- Premium App Splash Screen -->
+    <div id="appSplashScreen">
+        <div class="splash-content">
+            <div class="splash-icon"><i class="fas fa-code"></i></div>
+            <h1>Easy Html Editor</h1>
+            <div class="loading-bar"><div class="bar-fill"></div></div>
+        </div>
+    </div>
+
     <!-- Header -->
     <div class="header">
         <h1>Easy Html Editor</h1>
@@ -309,19 +649,19 @@
     </div>
 
     <!-- Toolbar Slider Handle -->
-<div id="toolbar-slider" onclick="toggleToolbar()">
-    <i class="fas fa-chevron-up"></i>
-</div>
+    <div id="toolbar-slider" onclick="toggleToolbar()">
+        <i class="fas fa-chevron-up"></i>
+    </div>
 
-<!-- Mobile Tab Bar -->
-<div class="tab-bar">
-    <button class="tab-button active" id="editorTabBtn" onclick="showSection('editor')">
-        <i class="fas fa-code"></i> कोड
-    </button>
-    <button class="tab-button" id="previewTabBtn" onclick="showSection('preview')">
-        <i class="fas fa-eye"></i> प्रिव्यू
-    </button>
-</div>
+    <!-- Mobile Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-button active" id="editorTabBtn" onclick="showSection('editor')">
+            <i class="fas fa-code"></i> कोड
+        </button>
+        <button class="tab-button" id="previewTabBtn" onclick="showSection('preview')">
+            <i class="fas fa-eye"></i> प्रिव्यू
+        </button>
+    </div>
 
     <!-- Main Container -->
     <div class="main-container">
@@ -336,9 +676,28 @@
                         <span id="matchCounter" style="font-size: 12px; margin-left: 8px; color: var(--text-muted-color);"></span>
                     </div>
                 </div>
-                <button class="btn-icon" onclick="clearEditor()" title="Clear Editor">
-                    <i class="fas fa-trash"></i> खाली करें
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-icon" onclick="copyAllCode()" title="Copy All Code" id="copyBtn">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="btn-icon danger-icon" onclick="clearEditor()" title="Clear Editor">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="quick-symbol-bar" id="quickSymbolBar">
+                <button class="symbol-btn" onclick="insertSymbol('<')">&lt;</button>
+                <button class="symbol-btn" onclick="insertSymbol('>')">&gt;</button>
+                <button class="symbol-btn" onclick="insertSymbol('/')">/</button>
+                <button class="symbol-btn" onclick="insertSymbol('=')">=</button>
+                <button class="symbol-btn" onclick="insertSymbol('&quot;')">"</button>
+                <button class="symbol-btn" onclick="insertSymbol('\'')">'</button>
+                <button class="symbol-btn" onclick="insertSymbol('!')">!</button>
+                <button class="symbol-btn" onclick="insertSymbol('{')">{</button>
+                <button class="symbol-btn" onclick="insertSymbol('}')">}</button>
+                <button class="symbol-btn" onclick="insertSymbol('(')">(</button>
+                <button class="symbol-btn" onclick="insertSymbol(')')">)</button>
+                <button class="symbol-btn" onclick="insertSymbol(';')">;</button>
             </div>
             <div class="editor-container">
                 <div class="code-editor" id="codeEditor"><!DOCTYPE html>
@@ -358,7 +717,14 @@
         <!-- Preview Section -->
         <div class="preview-section" id="previewSection">
             <div class="preview-header">
-                <span><i class="fas fa-eye"></i> रियल-टाइम प्रिव्यू</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span><i class="fas fa-eye"></i> प्रिव्यू</span>
+                    <div class="device-switcher">
+                        <button class="device-btn active" onclick="setPreviewDevice('desktop', this)" title="Desktop View"><i class="fas fa-desktop"></i></button>
+                        <button class="device-btn" onclick="setPreviewDevice('tablet', this)" title="Tablet View"><i class="fas fa-tablet-alt"></i></button>
+                        <button class="device-btn" onclick="setPreviewDevice('mobile', this)" title="Mobile View"><i class="fas fa-mobile-alt"></i></button>
+                    </div>
+                </div>
                 <div class="live-indicator"> <div class="live-dot"></div> <span>Live</span> </div>
                 <button class="fullscreen-btn" onclick="toggleFullScreenPreview()" title="Toggle Fullscreen">
                     <i class="fas fa-expand"></i>
@@ -381,7 +747,6 @@
             <button class="btn" onclick="uploadFile()"> <i class="fas fa-folder-open"></i> अपलोड </button>
             <button class="btn" onclick="downloadFile()"> <i class="fas fa-download"></i> डाउनलोड </button>
             <button class="btn" onclick="openPreview()"> <i class="fas fa-external-link-alt"></i> नई विंडो में प्रिव्यू </button>
-            <button class="btn btn-danger" onclick="clearEditor()"> <i class="fas fa-trash"></i> खाली करें </button>
             
             <div class="theme-chooser">
                  <h4>थीम बदलें</h4>
@@ -391,9 +756,25 @@
                  </div>
                  <div class="accent-colors">
                      <div class="color-swatch active" style="background: #007aff;" data-color="#007aff" data-hover="#005ecb" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #ff9f0a;" data-color="#ff9f0a" data-hover="#d48508" onclick="setAccentColor(this)"></div>
                      <div class="color-swatch" style="background: #30d158;" data-color="#30d158" data-hover="#28b049" onclick="setAccentColor(this)"></div>
                      <div class="color-swatch" style="background: #ff453a;" data-color="#ff453a" data-hover="#d93a31" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #ff9f0a;" data-color="#ff9f0a" data-hover="#d48508" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #af52de;" data-color="#af52de" data-hover="#8e3eb3" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #5856d6;" data-color="#5856d6" data-hover="#4442a8" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #ff2d55;" data-color="#ff2d55" data-hover="#d11d40" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #00c7be;" data-color="#00c7be" data-hover="#009c95" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #32ade6;" data-color="#32ade6" data-hover="#2489b8" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #64d2ff;" data-color="#64d2ff" data-hover="#40a6cc" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #bf5af2;" data-color="#bf5af2" data-hover="#9944c2" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #ff375f;" data-color="#ff375f" data-hover="#cc2949" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #1abc9c;" data-color="#1abc9c" data-hover="#148f77" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #e67e22;" data-color="#e67e22" data-hover="#b35d10" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #f1c40f;" data-color="#f1c40f" data-hover="#c29d0b" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #2ecc71;" data-color="#2ecc71" data-hover="#219150" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #3498db;" data-color="#3498db" data-hover="#2471a3" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #9b59b6;" data-color="#9b59b6" data-hover="#76448a" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #e74c3c;" data-color="#e74c3c" data-hover="#b03a2e" onclick="setAccentColor(this)"></div>
+                     <div class="color-swatch" style="background: #34495e;" data-color="#34495e" data-hover="#212f3d" onclick="setAccentColor(this)"></div>
                  </div>
             </div>
 
@@ -403,7 +784,7 @@
 
     <!-- Footer Toolbar -->
     <div class="footer-toolbar">
-        <button class="btn" onclick="runCode()"> <i class="fas fa-play"></i> रन </button>
+        <button class="btn" onclick="beautifyCode()" title="Format Code"> <i class="fas fa-magic"></i> फ़ॉर्मेट </button>
         <button class="btn" onclick="undo()" id="undoBtnFT" disabled> <i class="fas fa-undo"></i> </button>
         <button class="btn" onclick="redo()" id="redoBtnFT" disabled> <i class="fas fa-redo"></i> </button>
         <button class="btn" onclick="uploadFile()"> <i class="fas fa-folder-open"></i> </button>
@@ -412,6 +793,7 @@
 
     <input type="file" class="hidden-file-input" id="fileInput" accept=".html,.htm,.txt" onchange="handleFileUpload(event)">
 
+    <!-- Modals -->
     <div class="modal-overlay" id="customModal">
         <div class="modal-box">
             <p id="modalMessage"></p>
@@ -422,7 +804,6 @@
         </div>
     </div>
 
-    <!-- Rename & Download Modal -->
     <div class="modal-overlay" id="renameModal">
         <div class="modal-box">
             <h4 style="margin-bottom: 15px; color: var(--accent-color);">फाइल का नाम (Rename)</h4>
@@ -436,38 +817,49 @@
         </div>
     </div>
 
-        <script>
-    // --- NEW: Ace Editor Setup ---
+    <script>
+    // --- APP LOGIC ---
     const editorElement = document.getElementById('codeEditor');
     const sidePanel = document.getElementById('sidePanel');
     const body = document.body;
     const themeToggleBtn = document.querySelector('.header .theme-toggle');
     const hamburgerMenu = document.querySelector('.hamburger-menu');
 
-    let aceEditor; // Global variable for the Ace instance
+    let aceEditor; 
     let sidePanelOpen = false;
     let searchMatches = [];
     let currentMatchIndex = -1;
     let totalChanges = 0;
-    let currentMarkers = []; // To keep track of Ace markers
-    let originalFileName = 'index.html'; // Original file name memory
+    let currentMarkers = []; 
+    let originalFileName = 'index.html'; 
+
+    // --- Splash Screen Logic ---
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const splash = document.getElementById('appSplashScreen');
+            if(splash) {
+                splash.style.opacity = '0';
+                splash.style.visibility = 'hidden';
+                setTimeout(() => splash.remove(), 600);
+            }
+        }, 2200);
+    });
 
     // --- THEME MANAGEMENT ---
     function setLightDark(mode) {
-        let aceTheme = 'ace/theme/tomorrow_night';
-        if (mode === 'light') {
-            body.classList.add('light-theme');
-            themeToggleBtn.innerHTML = '<i class="fas fa-moon"></i> <span>Dark Mode</span>';
-            document.getElementById('lightToggleBtn').classList.add('active');
-            document.getElementById('darkToggleBtn').classList.remove('active');
-            aceTheme = 'ace/theme/chrome';
-        } else {
-            body.classList.remove('light-theme');
-            themeToggleBtn.innerHTML = '<i class="fas fa-sun"></i> <span>Light Mode</span>';
-            document.getElementById('darkToggleBtn').classList.add('active');
-            document.getElementById('lightToggleBtn').classList.remove('active');
+        const isLight = mode === 'light';
+        const lightBtn = document.getElementById('lightToggleBtn');
+        const darkBtn = document.getElementById('darkToggleBtn');
+        
+        body.classList.toggle('light-theme', isLight);
+        themeToggleBtn.innerHTML = isLight ? '<i class="fas fa-moon"></i> <span>Dark Mode</span>' : '<i class="fas fa-sun"></i> <span>Light Mode</span>';
+        
+        if(lightBtn) lightBtn.classList.toggle('active', isLight);
+        if(darkBtn) darkBtn.classList.toggle('active', !isLight);
+        
+        if (aceEditor) { 
+            aceEditor.setTheme(isLight ? 'ace/theme/chrome' : 'ace/theme/tomorrow_night'); 
         }
-        if (aceEditor) { aceEditor.setTheme(aceTheme); }
         localStorage.setItem('editorThemeMode', mode);
     }
 
@@ -486,7 +878,7 @@
         if(body.classList.contains('light-theme')) { setLightDark('dark'); } else { setLightDark('light'); }
     }
     
-    // --- CUSTOM MODAL FUNCTIONS (Unchanged) ---
+    // --- MODAL FUNCTIONS ---
     const customModal = document.getElementById('customModal');
     const modalMessage = document.getElementById('modalMessage');
     const modalOkBtn = document.getElementById('modalOkBtn');
@@ -524,85 +916,87 @@
         if (!aceEditor) return;
         try {
             localStorage.setItem('easyHtmlEditorCode', aceEditor.getValue());
-        } catch (e) {
-            console.warn("localStorage is not available.");
-        }
+            // SYNC FIX: फ़ाइल का नाम भी सुरक्षित करें
+            localStorage.setItem('easyHtmlEditorFileName', originalFileName);
+        } catch (e) { console.warn("localStorage N/A"); }
     }
 
-    // --- FINAL CORRECTED LOADING LOGIC ---
     function loadInitialCode(initialCodeFromHtml) {
         let savedCode = null;
-        try {
-            savedCode = localStorage.getItem('easyHtmlEditorCode');
-        } catch (e) {
-            // localStorage might be blocked in content:// URI
-            console.warn("localStorage is not available.");
-        }
+        try { savedCode = localStorage.getItem('easyHtmlEditorCode'); } catch (e) {}
         
         if (savedCode) {
             aceEditor.setValue(savedCode, -1);
         } else if (initialCodeFromHtml && initialCodeFromHtml.trim() !== '') {
             aceEditor.setValue(initialCodeFromHtml, -1);
         } else {
-            const defaultCode = `<!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>मेरी वेबसाइट</title>
-</head>
-<body>
-    <h1>स्वागत है!</h1>
-</body>
-</html>`;
+            const defaultCode = `<!DOCTYPE html>\n<html lang="hi">\n<head>\n<meta charset="UTF-8">\n<title>Website</title>\n</head>\n<body>\n<h1>Hello!</h1>\n</body>\n</html>`;
             aceEditor.setValue(defaultCode, -1);
         }
     }
 
-    // --- Undo/Redo updated for Ace's UndoManager ---
     function updateUndoRedoButtons() {
+        if (!aceEditor) return;
         const undoManager = aceEditor.session.getUndoManager();
-        document.querySelectorAll('#undoBtnSP, #undoBtnFT').forEach(btn => btn.disabled = !undoManager.hasUndo());
-        document.querySelectorAll('#redoBtnSP, #redoBtnFT').forEach(btn => btn.disabled = !undoManager.hasRedo());
+        
+        // SYNC FIX: फुटर और साइड पैनल दोनों के बटन्स को सही स्टेट में लाना
+        const canUndo = undoManager.hasUndo();
+        const canRedo = undoManager.hasRedo();
+
+        document.querySelectorAll('#undoBtnSP, #undoBtnFT').forEach(btn => {
+            btn.disabled = !canUndo;
+            // मोबाइल पर विज़ुअल फीडबैक के लिए ओपेसिटी (Opacity) सेट करना
+            btn.style.opacity = canUndo ? "1" : "0.4";
+        });
+
+        document.querySelectorAll('#redoBtnSP, #redoBtnFT').forEach(btn => {
+            btn.disabled = !canRedo;
+            btn.style.opacity = canRedo ? "1" : "0.4";
+        });
     }
 
     function undo() { 
-        if (aceEditor) {
+        if (aceEditor && aceEditor.session.getUndoManager().hasUndo()) {
             aceEditor.undo();
-            // Agar Counter 0 se bada hai, tabhi 1 ghatao (Safety Lock)
-            if (totalChanges > 0) {
-                updateChangeCounter(-1);
-            }
+            // SYNC FIX: अगर कोई बदलाव वापस हुआ है, तो काउंटर कम करें
+            if (totalChanges > 0) updateChangeCounter(-1);
+            updateUndoRedoButtons(); // बटन्स की हालत तुरंत अपडेट करें
         }
     }
-    function redo() { if (aceEditor) aceEditor.redo(); }
+    function redo() { 
+        if (aceEditor && aceEditor.session.getUndoManager().hasRedo()) {
+            aceEditor.redo();
+            // SYNC FIX: अगर कोई बदलाव वापस आया है, तो काउंटर बढ़ाएं
+            updateChangeCounter(1);
+            updateUndoRedoButtons(); // बटन्स की हालत तुरंत अपडेट करें
+        }
+    }
 
     function clearAllMarks() {
         currentMarkers.forEach(markerId => aceEditor.session.removeMarker(markerId));
         currentMarkers = [];
     }
 
-    // --- Change Counter Functions ---
     function updateChangeCounter(count) {
         totalChanges += count;
         const counterElement = document.getElementById('changeCounter');
         
-        // 1. Counter Update Logic
         if (totalChanges > 0) {
-            counterElement.innerHTML = `<i class="fas fa-sync-alt"></i> ${totalChanges}`;
+            counterElement.innerHTML = `<i class="fas fa-magic"></i> ${totalChanges}`;
             counterElement.style.display = 'inline-flex';
+            counterElement.classList.remove('bump');
+            void counterElement.offsetWidth; 
+            counterElement.classList.add('bump');
         } else {
             counterElement.style.display = 'none';
         }
         localStorage.setItem('editorTotalChanges', totalChanges);
 
-        // 2. Smart Filename Update Logic
         if (originalFileName) {
             let display = originalFileName;
             if (totalChanges > 0) {
                 const lastDotIndex = originalFileName.lastIndexOf('.');
                 if (lastDotIndex !== -1) {
-                    // Extension se pehle number lagana (e.g., file.1.html)
                     const namePart = originalFileName.substring(0, lastDotIndex);
                     const extPart = originalFileName.substring(lastDotIndex); 
                     display = `${namePart}.${totalChanges}${extPart}`;
@@ -610,8 +1004,6 @@
                     display = `${originalFileName}.${totalChanges}`;
                 }
             }
-            
-            // Update UI (Sidebar and Find Label)
             document.getElementById('fileNameSP').textContent = `फाइल: ${display}`;
             const findLabelName = document.getElementById('uploadedFileName');
             if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${display}`;
@@ -625,24 +1017,66 @@
         localStorage.setItem('editorTotalChanges', '0');
     }
     
-    // --- UI & Interaction Functions ---
-    function toggleSidePanel() { sidePanel.classList.toggle('open'); sidePanelOpen = !sidePanelOpen; }
+    function toggleSidePanel() {
+        sidePanel.classList.toggle('open');
+        body.classList.toggle('side-panel-open');
+        sidePanelOpen = sidePanel.classList.contains('open');
+    }
     function showSection(sectionId) {
         document.getElementById('editorSection').classList.toggle('active', sectionId === 'editor');
         document.getElementById('previewSection').classList.toggle('active', sectionId === 'preview');
         document.getElementById('editorTabBtn').classList.toggle('active', sectionId === 'editor');
         document.getElementById('previewTabBtn').classList.toggle('active', sectionId === 'preview');
-        if (sectionId === 'editor' && aceEditor) {
-            aceEditor.resize();
-        }
-        if (sectionId === 'preview') { updatePreview(); }
+        if (sectionId === 'editor' && aceEditor) aceEditor.resize();
+        if (sectionId === 'preview') updatePreview();
     }
     function toggleFullScreenPreview() { body.classList.toggle('fullscreen-preview'); }
-    function clearInput(elementId) { document.getElementById(elementId).value = ''; }
+
+    function setPreviewDevice(device, btn) {
+        const frame = document.getElementById('previewFrame');
+        const buttons = document.querySelectorAll('.device-btn');
+        
+        // एक्टिव क्लास अपडेट करें
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // डिवाइस के हिसाब से विड्थ सेट करें
+        if (device === 'mobile') frame.style.width = '360px';
+        else if (device === 'tablet') frame.style.width = '768px';
+        else frame.style.width = '100%';
+        
+        // फ्रेम को फिर से रेंडर करें
+        updatePreview();
+    }
     
-    // --- Search/Replace Logic for Ace ---
+    function clearInput(elementId) { 
+        document.getElementById(elementId).value = ''; 
+        
+        // SYNC FIX: अगर सर्च बॉक्स क्लियर हुआ है, तो एडिटर की 'गंदगी' भी साफ़ करें
+        if (elementId === 'findBlock') {
+            if (aceEditor) {
+                aceEditor.session.getSelection().clearSelection();
+                clearAllMarks(); // हाईलाइट्स हटाना
+            }
+            // काउंटर और नेविगेशन छिपाना
+            document.getElementById('matchCounter').textContent = '';
+            document.getElementById('findNavContainer').style.display = 'none';
+            document.getElementById('replaceAllBtn').style.display = 'none';
+        }
+    }
+
+    // AI का कचरा (```html, ```) साफ़ करने वाला फंक्शन
+    function cleanAIFormatting(textarea) {
+        let val = textarea.value;
+        // ये रेगुलर एक्सप्रेशन शुरू और आखिर से ```html या ``` को हटा देता है
+        const cleaned = val.replace(/^```[a-z]*\n?|```$/gi, '').trim();
+        if (val !== cleaned) {
+            textarea.value = cleaned;
+        }
+    }
+    
     function findAndSelectText() {
-        clearAllMarks(); // पुराने हाइलाइट्स हटाएं
+        clearAllMarks(); 
         const codeToFind = document.getElementById('findBlock').value;
         const findNavContainer = document.getElementById('findNavContainer');
         const replaceAllBtn = document.getElementById('replaceAllBtn');
@@ -650,20 +1084,19 @@
             showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
             return;
         }
-        const matchesFound = aceEditor.findAll(codeToFind, { regExp: false, caseSensitive: false, wholeWord: false });
+        
+        // स्मार्ट सर्च लॉजिक का इस्तेमाल
+        const smartRegex = createSmartSearchRegex(codeToFind);
+        const matchesFound = aceEditor.findAll(smartRegex, { regExp: true, caseSensitive: false, wholeWord: false });
+        
         if (matchesFound > 0) {
-            if (window.innerWidth <= 768) { showSection('editor'); }
-            
-            // CHANGE: अब Replace All बटन सिर्फ तब दिखेगा जब 1 से ज्यादा मैच हों
+            if (window.innerWidth <= 768) showSection('editor');
             findNavContainer.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
             replaceAllBtn.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
             
-            // Fix: Scroll to the first match
-            const ranges = aceEditor.selection.getAllRanges();
-            if(ranges.length > 0) {
-                ranges.sort((a, b) => a.start.row - b.start.row);
-                aceEditor.scrollToLine(ranges[0].start.row, true, true, function() {});
-            }
+            // काउंटर और फोकस अपडेट करें
+            updateMatchDisplay();
+            focusCurrentMatch();
         } else {
             showCustomAlert('कोड नहीं मिला।');
             findNavContainer.style.display = 'none';
@@ -671,7 +1104,7 @@
         }
     }
     
-    function replaceCodeBlock() {
+    async function replaceCodeBlock() {
         const Range = ace.require('ace/range').Range;
         const newText = document.getElementById('replaceBlock').value;
         const currentRange = aceEditor.getSelectionRange();
@@ -681,39 +1114,123 @@
              return;
         }
 
-        clearAllMarks(); // पुराने मार्कर हटाएं
-        
+        // हेल्थ चेक
+        const problems = checkHtmlHealth(newText);
+        if (problems.length > 0) {
+            const proceed = await showCustomConfirm(`चेतावनी: नए कोड में कुछ गड़बड़ लग रही है:\n- ${problems.join('\n- ')}\n\nक्या आप फिर भी इसे बदलना चाहते हैं?`);
+            if (!proceed) return;
+        }
+
+        clearAllMarks();
         const startRow = currentRange.start.row;
         const startCol = currentRange.start.column;
 
-        aceEditor.replace(newText); // टेक्स्ट बदलें
+        aceEditor.replace(newText);
         updateChangeCounter(1);
+
+        // SYNC FIX: रिप्लेसमेंट के बाद काउंटर को अपडेट करना
+        const codeToFind = document.getElementById('findBlock').value;
+        if (codeToFind) {
+            const smartRegex = createSmartSearchRegex(codeToFind);
+            const remainingMatches = aceEditor.findAll(smartRegex, { regExp: true, caseSensitive: false });
+            updateMatchDisplay();
+            // अगर अब कोई मैच नहीं बचा तो नेविगेशन छिपा दें
+            if (remainingMatches <= 1) {
+                document.getElementById('findNavContainer').style.display = 'none';
+                document.getElementById('replaceAllBtn').style.display = 'none';
+            }
+        }
 
         const endPos = aceEditor.getCursorPosition();
         const newRange = new Range(startRow, startCol, endPos.row, endPos.column);
-        
-        // हरा मार्कर लगाएं
         const markerId = aceEditor.session.addMarker(newRange, "green-marker", "text");
         currentMarkers.push(markerId);
     }
 
-    function replaceAllCode() {
+    function showToast(message) {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<i class="fas fa-check-circle" style="color: var(--accent-success-color)"></i> ${message}`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
+    async function replaceAllCode() {
         const codeToFind = document.getElementById('findBlock').value;
         const codeToReplace = document.getElementById('replaceBlock').value;
-        const matchesFound = aceEditor.findAll(codeToFind, { regExp: false });
+
+        const smartRegex = createSmartSearchRegex(codeToFind);
+        const problems = checkHtmlHealth(codeToReplace);
+
+        if (problems.length > 0) {
+            const proceed = await showCustomConfirm(`सावधान! नए कोड में समस्या है:\n- ${problems.join('\n- ')}\n\nक्या आप सभी जगह इसे बदलना चाहते हैं?`);
+            if (!proceed) return;
+        }
+
+        const matchesFound = aceEditor.findAll(smartRegex, { regExp: true });
         if (matchesFound > 0) {
             aceEditor.replaceAll(codeToReplace);
-            // Counter sirf 1 badhega (Action Count)
             updateChangeCounter(1);
-            showCustomAlert(`✅ शानदार! कोड की ${matchesFound} कॉपियां बदल दी गई हैं।`);
+            
+            // SYNC FIX: सारे मैच खत्म होने पर काउंटर साफ़ करना
+            document.getElementById('matchCounter').textContent = '';
+            document.getElementById('findNavContainer').style.display = 'none';
+            document.getElementById('replaceAllBtn').style.display = 'none';
+            
+            showToast(`${matchesFound} बदलाव सफलतापूर्वक किए गए!`);
         } else {
-            showCustomAlert('कुछ भी बदलने के लिए नहीं मिला।');
+            showToast('खोजने के लिए कुछ नहीं मिला।');
         }
     }
 
-    function findNext() { aceEditor.findNext(); }
-    function findPrev() { aceEditor.findPrevious(); }
-    // --- File & Other Functions ---
+    function findNext() { 
+        aceEditor.findNext();
+        updateMatchDisplay();
+        focusCurrentMatch();
+    }
+    function findPrev() { 
+        aceEditor.findPrevious();
+        updateMatchDisplay();
+        focusCurrentMatch();
+    }
+
+    // मैच काउंटर (1 of 5) अपडेट करने के लिए
+    function updateMatchDisplay() {
+        const matches = aceEditor.session.getSelection().getAllRanges();
+        const total = matches.length;
+        const current = aceEditor.selection.index + 1 || 1;
+        const counter = document.getElementById('matchCounter');
+        if (total > 0) {
+            counter.textContent = `${current} of ${total}`;
+            counter.style.color = 'var(--accent-warning-color)';
+        } else {
+            counter.textContent = '';
+        }
+    }
+
+    // करंट मैच पर ग्लो और सेंटर फोकस करने के लिए
+    function focusCurrentMatch() {
+        const range = aceEditor.getSelectionRange();
+        if (range) {
+            aceEditor.scrollToLine(range.start.row, true, true, function() {});
+            // एक अस्थायी ग्लो मार्कर जोड़ना
+            const markerId = aceEditor.session.addMarker(range, "current-match-glow", "text");
+            setTimeout(() => {
+                aceEditor.session.removeMarker(markerId);
+            }, 1500);
+        }
+    }
+
     function uploadFile() { document.getElementById('fileInput').click(); }
     function handleFileUpload(event) {
         const file = event.target.files[0];
@@ -722,16 +1239,10 @@
             reader.onload = (e) => {
                 showSection('editor'); 
                 aceEditor.setValue(e.target.result, -1);
-                
-                // Save Original Name
                 originalFileName = file.name;
-
                 document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
-                
-                // Show filename in Find Box Label
                 const findLabelName = document.getElementById('uploadedFileName');
                 if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${file.name}`;
-
                 resetChangeCounter();
                 setTimeout(() => { aceEditor.resize(); }, 100); 
             };
@@ -749,36 +1260,25 @@
     }
 
     function downloadFile() {
-        // 1. मौजूदा फाइल का नाम लें
         const currentName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '').trim() || 'index.html';
-        
-        // 2. इनपुट बॉक्स में वो नाम भरें
         const inputField = document.getElementById('renameInput');
         inputField.value = currentName;
-        
-        // 3. मोडल (बॉक्स) दिखाएं
         document.getElementById('renameModal').style.display = 'flex';
-        
-        // 4. इनपुट पर फोकस करें और सारा टेक्स्ट सिलेक्ट करें (आसान रिनेमिंग के लिए)
-        setTimeout(() => {
-            inputField.focus();
-            inputField.select();
-        }, 100);
+        setTimeout(() => { inputField.focus(); inputField.select(); }, 100);
     }
 
-    function closeRenameModal() {
-        document.getElementById('renameModal').style.display = 'none';
-    }
+    function closeRenameModal() { document.getElementById('renameModal').style.display = 'none'; }
 
     function confirmDownload() {
-        // 1. नया नाम उठाएं
         let fileName = document.getElementById('renameInput').value.trim();
         if (!fileName) fileName = 'index.html';
-        
-        // 2. अगर एक्सटेंशन (.html) नहीं लगाया है, तो अपने आप लगा दें
         if (!fileName.includes('.')) fileName += '.html';
 
-        // 3. डाउनलोड प्रोसेस शुरू करें
+        // SYNC FIX: डाउनलोड के बाद नए नाम को 'Master Name' बनायें ताकि वर्जनिंग सही रहे
+        originalFileName = fileName;
+        updateChangeCounter(0); 
+        saveCodeToLocalStorage(); // नया नाम लोकल स्टोरेज में भी अपडेट करें
+
         const blob = new Blob([aceEditor.getValue()], { type: 'text/html' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
@@ -787,19 +1287,12 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
-
-        // 4. मोडल बंद करें
         closeRenameModal();
-        
-        // 5. फाइल का नाम UI में भी अपडेट कर दें
         document.getElementById('fileNameSP').textContent = `फाइल: ${fileName}`;
     }
 
-    // Enter Key दबाने पर डाउनलोड हो जाए (UX के लिए)
     document.getElementById('renameInput').addEventListener('keyup', function(event) {
-        if (event.key === 'Enter') {
-            confirmDownload();
-        }
+        if (event.key === 'Enter') confirmDownload();
     });
 
     function openPreview() {
@@ -807,46 +1300,102 @@
             const newWindow = window.open();
             newWindow.document.write(aceEditor.getValue());
             newWindow.document.close();
-        } catch (e) {
-            showCustomAlert('पॉप-अप ब्लॉक हो गया!');
+        } catch (e) { showCustomAlert('पॉप-अप ब्लॉक हो गया!'); }
+    }
+
+    function copyAllCode() {
+        const code = aceEditor.getValue();
+        navigator.clipboard.writeText(code).then(() => {
+            const btn = document.getElementById('copyBtn');
+            const icon = btn.querySelector('i');
+            icon.className = 'fas fa-check'; 
+            btn.style.color = 'var(--accent-success-color)';
+            setTimeout(() => {
+                icon.className = 'fas fa-copy';
+                btn.style.color = '';
+            }, 2000);
+        });
+    }
+
+    function insertSymbol(symbol) {
+        if (aceEditor) {
+            aceEditor.insert(symbol);
+            aceEditor.focus();
+            // छोटा वाइब्रेशन फील देने के लिए (अगर मोबाइल सपोर्ट करे)
+            if (navigator.vibrate) navigator.vibrate(10);
         }
     }
 
-    function runCode() {
-        updatePreview();
-        const runBtn = document.querySelector('.footer-toolbar .btn');
-        if(runBtn) {
-            runBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            setTimeout(() => { runBtn.innerHTML = '<i class="fas fa-play"></i> रन'; }, 500);
-        }
+    // जादुई ऑटो-टैग क्लोजर फंक्शन
+    function setupAutoTagClose() {
+        aceEditor.on("input", function() {
+            let cursor = aceEditor.getCursorPosition();
+            let line = aceEditor.session.getLine(cursor.row);
+            let textBefore = line.substring(0, cursor.column);
+            
+            // अगर यूज़र ने अभी-अभी '>' टाइप किया है
+            if (textBefore.endsWith(">")) {
+                let match = textBefore.match(/<([a-zA-Z1-6]+)(?:\s+[^>]*)?>$/);
+                if (match) {
+                    let tagName = match[1];
+                    // कुछ टैग्स जिन्हें बंद करने की ज़रूरत नहीं होती (Self-closing tags)
+                    const voidTags = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"];
+                    
+                    if (!voidTags.includes(tagName.toLowerCase())) {
+                        let pos = aceEditor.getCursorPosition();
+                        aceEditor.session.insert(pos, "</" + tagName + ">");
+                        aceEditor.moveCursorTo(pos.row, pos.column);
+                    }
+                }
+            }
+        });
+    }
+
+    function beautifyCode() {
+        if (!aceEditor) return;
+        const currentCode = aceEditor.getValue();
+        // Configuration for professional look
+        const formattedCode = html_beautify(currentCode, {
+            indent_size: 4,
+            indent_char: ' ',
+            max_preserve_newlines: 2,
+            preserve_newlines: true,
+            indent_inner_html: true,
+            brace_style: 'collapse',
+            indent_scripts: 'normal',
+            wrap_line_length: 0
+        });
+        aceEditor.setValue(formattedCode, -1);
+        showToast("कोड जादुई तरीके से संवर गया! ✨");
     }
     
     function toggleToolbar() {
         document.body.classList.toggle('toolbar-collapsed');
     }
 
-    // --- Event Listeners ---
+    // --- Init ---
     window.addEventListener('DOMContentLoaded', () => {
-        // --- THIS IS THE CRITICAL FIX ---
-        // 1. First, find the element and read its content.
         const editorDiv = document.getElementById('codeEditor');
         const initialContent = editorDiv.textContent;
-        
-        // 2. NOW, initialize Ace Editor. It will clear the div, but we have the content safe.
         aceEditor = ace.edit(editorDiv);
-        
         ace.require("ace/ext/language_tools");
         aceEditor.setOptions({
             mode: "ace/mode/html",
             selectionStyle: "text",
             wrap: true,
+            enableMobileMenu: false,
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true,
             fontSize: "14px",
-            fontFamily: 'Monaco, Menlo, monospace'
+            fontFamily: 'Monaco, Menlo, monospace',
+            showPrintMargin: false,
+            highlightActiveLine: true,
+            cursorStyle: "smooth",
+            behavioursEnabled: true,
+            animatedScroll: true,
+            displayIndentGuides: true
         });
         
-        // Load themes, colors etc.
         const savedMode = localStorage.getItem('editorThemeMode') || 'dark';
         setLightDark(savedMode);
         
@@ -858,35 +1407,99 @@
             sw.classList.toggle('active', sw.getAttribute('data-color') === savedColor);
         });
         
-        // 3. Load the code using our robust function with the CORRECT initial content.
         loadInitialCode(initialContent); 
-        
         aceEditor.session.getUndoManager().reset();
         updateUndoRedoButtons();
         updatePreview();
 
-        // Standard change listener
         aceEditor.session.on('change', () => {
             updatePreview();
             saveCodeToLocalStorage();
             updateUndoRedoButtons();
+
+            // SYNC FIX: अगर यूजर ने खुद कुछ बदला है, तो पुराना सर्च रिजल्ट हटा दें
+            if (document.getElementById('matchCounter').textContent !== '') {
+                // सिर्फ हाईलाइट्स और UI साफ़ करें, कर्सर न हिलाएं
+                clearAllMarks();
+                document.getElementById('matchCounter').textContent = '';
+                document.getElementById('findNavContainer').style.display = 'none';
+                document.getElementById('replaceAllBtn').style.display = 'none';
+            }
         });
 
-        // Other UI setup
-        if (window.innerWidth <= 768) { showSection('editor'); }
+        // SYNC FIX: सेव किया हुआ फ़ाइल नाम वापस लाएं
+        const savedFileName = localStorage.getItem('easyHtmlEditorFileName');
+        if (savedFileName) originalFileName = savedFileName;
+
         const savedChanges = parseInt(localStorage.getItem('editorTotalChanges') || '0');
         if (savedChanges > 0) {
             totalChanges = savedChanges;
-            document.getElementById('changeCounter').innerHTML = `<i class="fas fa-sync-alt"></i> ${totalChanges}`;
-            document.getElementById('changeCounter').style.display = 'inline-flex';
+            // नाम और काउंटर दोनों को लेबल में सिंक करने के लिए
+            updateChangeCounter(0);
+        } else {
+            // अगर कोई बदलाव नहीं है, तो भी फ़ाइल का नाम तो दिखाना ही है
+            document.getElementById('fileNameSP').textContent = `फाइल: ${originalFileName}`;
+            const findLabelName = document.getElementById('uploadedFileName');
+            if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${originalFileName}`;
         }
-        
-        const observer = new MutationObserver(() => {
-            if (document.getElementById('editorSection').classList.contains('active')) {
-                aceEditor.resize();
-            }
+
+        if (window.innerWidth <= 768) { showSection('editor'); }
+
+        // ऑटो-टैग क्लोजर को चालू करें
+        setupAutoTagClose();
+    });
+
+    // कोड की सेहत जाँचने वाला फंक्शन
+    function checkHtmlHealth(html) {
+        const tags = ['div', 'span', 'p', 'table', 'ul', 'li', 'section', 'b', 'i'];
+        let issues = [];
+        tags.forEach(tag => {
+            const openCount = (html.match(new RegExp('<' + tag + '(?![a-z])', 'gi')) || []).length;
+            const closeCount = (html.match(new RegExp('</' + tag + '>', 'gi')) || []).length;
+            if (openCount > closeCount) issues.push(`<${tag}> बंद नहीं हुआ है`);
+            if (closeCount > openCount) issues.push(`</${tag}> फालतू लगा है`);
         });
-        observer.observe(document.getElementById('editorSection'), { attributes: true, attributeFilter: ['class'] });
+        return issues;
+    }
+
+    // सर्च कोड को फ्लेक्सिबल बनाने वाला फंक्शन
+    function createSmartSearchRegex(str) {
+        // स्पेशल कैरेक्टर्स को एस्केप करना ताकि रेगुलर एक्सप्रेशन न टूटे
+        let escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // हर स्पेस या न्यू लाइन की जगह '\s*' डालना ताकि मैच फ्लेक्सिबल हो
+        let flexible = escaped.replace(/\s+/g, '\\s*');
+        return flexible;
+    }
+    
+    // मोबाइल कीबोर्ड और लेआउट सिंक लॉजिक (Pixel-Perfect Version)
+    window.addEventListener('load', () => {
+        if (window.visualViewport) {
+            const vpv = window.visualViewport;
+            const initialHeight = vpv.height;
+            
+            vpv.addEventListener('resize', () => {
+                const isMobile = window.innerWidth <= 768;
+                if (!isMobile) return;
+
+                // कीबोर्ड डिटेक्शन (अगर हाइट 15% से ज़्यादा कम हो)
+                if (vpv.height < initialHeight * 0.85) {
+                    document.body.classList.add('keyboard-open');
+                } else {
+                    document.body.classList.remove('keyboard-open');
+                }
+
+                // एडिटर को नई हाइट के हिसाब से तुरंत एडजस्ट करना
+                if (aceEditor) {
+                    // छोटा सा डिले ताकि ब्राउज़र कीबोर्ड एनीमेशन पूरा कर ले
+                    setTimeout(() => {
+                        aceEditor.resize();
+                        aceEditor.renderer.updateFull();
+                        // कर्सर को व्यू में रखना
+                        aceEditor.renderer.scrollCursorIntoView();
+                    }, 150);
+                }
+            });
+        }
     });
 
     document.addEventListener('keydown', (e) => {
@@ -894,7 +1507,7 @@
         if (e.ctrlKey || e.metaKey) {
             if (e.key === 's') { e.preventDefault(); downloadFile(); }
         }
-        if (e.key === 'Escape' && sidePanelOpen) { toggleSidePanel(); }
+        if (e.key === 'Escape' && sidePanelOpen) toggleSidePanel();
     });
 
     document.addEventListener('click', (event) => {
