@@ -1319,17 +1319,55 @@
     }
 
     function copyAllCode() {
+        if (!aceEditor) return;
         const code = aceEditor.getValue();
-        navigator.clipboard.writeText(code).then(() => {
-            const btn = document.getElementById('copyBtn');
-            const icon = btn.querySelector('i');
+        const btn = document.getElementById('copyBtn');
+        const icon = btn.querySelector('i');
+
+        // UI Feedback फंक्शन (ताकि यूजर को पता चले काम हो गया)
+        const showSuccess = () => {
+            const originalClass = icon.className;
             icon.className = 'fas fa-check'; 
             btn.style.color = 'var(--accent-success-color)';
+            btn.style.borderColor = 'var(--accent-success-color)';
+            showToast('कोड कॉपी हो गया! 📋'); // Toast भी दिखाएगा
+            
             setTimeout(() => {
                 icon.className = 'fas fa-copy';
                 btn.style.color = '';
+                btn.style.borderColor = '';
             }, 2000);
-        });
+        };
+
+        // Fallback तरीका (पुराने ब्राउज़र या Local File के लिए)
+        const fallbackCopy = (text) => {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; // स्क्रीन से बाहर न जाए
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) showSuccess();
+                else showToast('कॉपी फेल हो गया!');
+            } catch (err) {
+                showToast('कॉपी नहीं हो पाया!');
+            }
+            document.body.removeChild(textArea);
+        };
+
+        // पहले मॉडर्न API ट्राई करो, अगर फेल हो तो Fallback यूज़ करो
+        if (!navigator.clipboard) {
+            fallbackCopy(code);
+            return;
+        }
+        navigator.clipboard.writeText(code).then(
+            function() { showSuccess(); }, 
+            function(err) { fallbackCopy(code); }
+        );
     }
 
     function insertSymbol(symbol) {
