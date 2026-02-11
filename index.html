@@ -99,7 +99,7 @@
         .bar-fill {
             width: 0%; height: 100%; background: #007aff;
             box-shadow: 0 0 10px #007aff;
-            animation: loadBar 2s ease-in-out forwards;
+            animation: loadBar 0.9s ease-in-out forwards;
         }
         @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes fadeInText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -242,7 +242,13 @@
         .ace_active-line { background: rgba(150, 150, 150, 0.1) !important; }
         .ace_gutter-active-line { background: var(--accent-color) !important; color: white !important; }
         .ace_cursor { border-left: 2px solid var(--accent-color) !important; }
-        .ace_marker-layer .ace_selection { background: var(--accent-color) !important; opacity: 0.3 !important; }
+        .ace_marker-layer .ace_selection {
+            background: var(--accent-color) !important;
+            opacity: 0.5 !important; /* रंग को गहरा किया */
+            border: 2px solid var(--accent-color) !important; /* बॉर्डर जोड़ा */
+            box-shadow: 0 0 10px var(--accent-color) !important; /* ग्लो इफ़ेक्ट ताकि दूर से दिखे */
+            border-radius: 3px;
+        }
         .ace_indent-guide { opacity: 0.3; }
 
         .preview-section { border-left: 1px solid var(--border-color); }
@@ -805,14 +811,18 @@
     </div>
 
     <div class="modal-overlay" id="renameModal">
-        <div class="modal-box">
-            <h4 style="margin-bottom: 15px; color: var(--accent-color);">फाइल का नाम (Rename)</h4>
-            <div style="margin-bottom: 20px;">
-                <input type="text" id="renameInput" style="width: 100%; padding: 10px; background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-color); border-radius: 5px; outline: none; font-size: 14px;">
+        <div class="modal-box" style="border-top: 5px solid var(--accent-color);">
+            <h3 style="margin-bottom: 20px; color: var(--text-color); font-weight: 700; font-size: 18px;">फाइल का नाम बदलें</h3>
+            <div style="margin-bottom: 25px;">
+                <input type="text" id="renameInput" placeholder="filename.html" 
+                       style="width: 100%; padding: 15px; background: var(--input-bg); 
+                              border: 2px solid var(--input-border); border-left: 5px solid var(--accent-color); 
+                              color: var(--text-color); border-radius: 8px; outline: none; 
+                              font-size: 16px; font-weight: 500; font-family: 'Segoe UI', sans-serif;">
             </div>
             <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeRenameModal()">Cancel</button>
-                <button class="btn" onclick="confirmDownload()"><i class="fas fa-download"></i> Download</button>
+                <button class="btn btn-secondary" onclick="closeRenameModal()" style="padding: 12px 20px;">Cancel</button>
+                <button class="btn" onclick="confirmDownload()" style="background: var(--accent-color); color: white; box-shadow: 0 4px 15px var(--accent-color); padding: 12px 25px;"><i class="fas fa-download"></i> Save File</button>
             </div>
         </div>
     </div>
@@ -842,7 +852,7 @@
                 splash.style.visibility = 'hidden';
                 setTimeout(() => splash.remove(), 600);
             }
-        }, 2200);
+        }, 1000);
     });
 
     // --- THEME MANAGEMENT ---
@@ -1084,11 +1094,16 @@
             showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
             return;
         }
+        // स्मार्ट सर्च लॉजिक का इस्तेमाल - यहाँ हमने केस सेंसिटिविटी को और मजबूत किया है
+        const smartRegex = createSmartSearchRegex(codeToFind);const matchesFound = aceEditor.findAll(codeToFind, { 
+            regExp: false, // रेगुलर एक्सप्रेशन बंद, अब सिर्फ Exact Match होगा
+            caseSensitive: false, 
+            wholeWord: false,
+            wrap: true,
+            preventScroll: false 
+        });
         
-        // स्मार्ट सर्च लॉजिक का इस्तेमाल
-        const smartRegex = createSmartSearchRegex(codeToFind);
-        const matchesFound = aceEditor.findAll(smartRegex, { regExp: true, caseSensitive: false, wholeWord: false });
-        
+    
         if (matchesFound > 0) {
             if (window.innerWidth <= 768) showSection('editor');
             findNavContainer.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
@@ -1463,12 +1478,10 @@
     }
 
     // सर्च कोड को फ्लेक्सिबल बनाने वाला फंक्शन
-    function createSmartSearchRegex(str) {
-        // स्पेशल कैरेक्टर्स को एस्केप करना ताकि रेगुलर एक्सप्रेशन न टूटे
-        let escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        // हर स्पेस या न्यू लाइन की जगह '\s*' डालना ताकि मैच फ्लेक्सिबल हो
-        let flexible = escaped.replace(/\s+/g, '\\s*');
-        return flexible;
+   function createSmartSearchRegex(str) {
+        if (!str) return "";
+        // अब कोई 'Smart' काम नहीं होगा, सिर्फ Exact Match के लिए स्ट्रिंग वापस भेजेंगे
+        return str;
     }
     
     // मोबाइल कीबोर्ड और लेआउट सिंक लॉजिक (Pixel-Perfect Version)
