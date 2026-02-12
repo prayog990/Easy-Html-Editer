@@ -1379,30 +1379,7 @@
         }
     }
 
-    // जादुई ऑटो-टैग क्लोजर फंक्शन
-    function setupAutoTagClose() {
-        aceEditor.on("input", function() {
-            let cursor = aceEditor.getCursorPosition();
-            let line = aceEditor.session.getLine(cursor.row);
-            let textBefore = line.substring(0, cursor.column);
-            
-            // अगर यूज़र ने अभी-अभी '>' टाइप किया है
-            if (textBefore.endsWith(">")) {
-                let match = textBefore.match(/<([a-zA-Z1-6]+)(?:\s+[^>]*)?>$/);
-                if (match) {
-                    let tagName = match[1];
-                    // कुछ टैग्स जिन्हें बंद करने की ज़रूरत नहीं होती (Self-closing tags)
-                    const voidTags = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"];
-                    
-                    if (!voidTags.includes(tagName.toLowerCase())) {
-                        let pos = aceEditor.getCursorPosition();
-                        aceEditor.session.insert(pos, "</" + tagName + ">");
-                        aceEditor.moveCursorTo(pos.row, pos.column);
-                    }
-                }
-            }
-        });
-    }
+    // Auto-Tag Close removed for stability
 
     function beautifyCode() {
         if (!aceEditor) return;
@@ -1497,9 +1474,6 @@
         }
 
         if (window.innerWidth <= 768) { showSection('editor'); }
-
-        // ऑटो-टैग क्लोजर को चालू करें
-        setupAutoTagClose();
     });
 
     // कोड की सेहत जाँचने वाला फंक्शन
