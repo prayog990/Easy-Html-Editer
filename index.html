@@ -496,6 +496,21 @@
             border: 1px solid rgba(255, 159, 10, 0.4);
             border-radius: 2px;
         }
+        /* AI Report Item Styles */
+        .report-item {
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--surface-color); padding: 12px; border-radius: 8px;
+            margin-bottom: 8px; border-left: 4px solid #555;
+        }
+        .report-item.match-success { border-left-color: var(--accent-success-color); }
+        .report-item.match-fail { border-left-color: var(--accent-danger-color); }
+        .report-info { flex: 1; margin-right: 10px; }
+        .report-title { font-weight: bold; font-size: 13px; display: block; }
+        .report-status { font-size: 11px; color: var(--text-muted-color); }
+        .report-actions { display: flex; gap: 5px; }
+        .btn-mini { padding: 5px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-mini-copy { background: #333; color: #fff; }
+        .btn-mini-debug { background: var(--accent-color); color: white; }
 
         /* सर्च मैच को फोकस करने के लिए ग्लो एनीमेशन */
         .current-match-glow {
@@ -630,7 +645,12 @@
         <div class="input-container">
             <label for="findBlock" style="display: flex; justify-content: space-between; align-items: center;">
                 <span><i class="fas fa-search"></i> इस कोड को खोजें:</span> 
-                <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 13px;"></span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="smartUpdateBtn" class="btn" onclick="openSmartUpdateModal()" style="padding: 4px 10px; font-size: 11px; background: linear-gradient(135deg, #6e8efb, #a777e3); border: none; box-shadow: 0 0 10px rgba(110, 142, 251, 0.4); display: none;">
+                        <i class="fas fa-robot"></i> AI SMART UPDATE
+                    </button>
+                    <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 13px;"></span>
+                </div>
             </label>
             <div class="textarea-wrapper">
                 <textarea id="findBlock" placeholder="यहाँ पुराना कोड पेस्ट करें..."></textarea>
@@ -806,6 +826,34 @@
             <div class="modal-buttons">
                 <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
                 <button class="btn" id="modalOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Smart Update Modal -->
+    <div class="modal-overlay" id="smartUpdateModal">
+        <div class="modal-box" style="width: 500px; max-width: 95%; border-top: 5px solid #a777e3;">
+            <h3 style="margin-bottom: 15px; color: var(--text-color);"><i class="fas fa-robot"></i> AI Smart Update</h3>
+            <p style="font-size: 13px; margin-bottom: 15px; color: var(--text-muted-color);">AI द्वारा दिया गया पूरा मैसेज यहाँ पेस्ट करें। हम अपने आप Search/Replace ब्लॉक्स ढूँढ लेंगे।</p>
+            <textarea id="aiPasteArea" placeholder="अपना टेक्स्ट यहाँ पेस्ट करें..." 
+                      style="width: 100%; height: 200px; background: var(--input-bg); border: 1.5px solid var(--input-border); color: var(--text-color); border-radius: 10px; padding: 12px; font-size: 13px; outline: none; margin-bottom: 15px; resize: none;"></textarea>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeSmartUpdateModal()">Cancel</button>
+                <button class="btn" onclick="processAiText()" style="background: #a777e3; color: white;">जाँच करें (Verify)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Report Modal -->
+    <div class="modal-overlay" id="aiReportModal">
+        <div class="modal-box" style="width: 550px; max-width: 95%; text-align: left;">
+            <h3 style="margin-bottom: 10px; text-align: center;"><i class="fas fa-clipboard-check"></i> अपडेट रिपोर्ट</h3>
+            <div id="aiReportList" style="max-height: 350px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 10px;">
+                <!-- Report Items will be injected here -->
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+                <button id="applyAiUpdateBtn" class="btn btn-success" onclick="applySmartUpdates()">बदलाव लागू करें</button>
             </div>
         </div>
     </div>
@@ -1258,6 +1306,7 @@
                 document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
                 const findLabelName = document.getElementById('uploadedFileName');
                 if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${file.name}`;
+                document.getElementById('smartUpdateBtn').style.display = 'inline-flex'; // AI Button Show
                 resetChangeCounter();
                 setTimeout(() => { aceEditor.resize(); }, 100); 
             };
@@ -1534,6 +1583,172 @@
         }
         if (e.key === 'Escape' && sidePanelOpen) toggleSidePanel();
     });
+
+    // --- AI SMART UPDATE SYSTEM (AJ Logic) ---
+    let pendingUpdates = [];
+
+    function openSmartUpdateModal() {
+        document.getElementById('smartUpdateModal').style.display = 'flex';
+        document.getElementById('aiPasteArea').value = '';
+    }
+
+    function closeSmartUpdateModal() {
+        document.getElementById('smartUpdateModal').style.display = 'none';
+    }
+
+    function closeReportModal() {
+        document.getElementById('aiReportModal').style.display = 'none';
+    }
+
+    // AJ Universal Parser v1.1.2: एआई की हर कोडिंग स्टाइल को पहचानने के लिए
+    function cleanCodeBlock(text) {
+        if (!text) return "";
+        let cleaned = text;
+        
+        // 1. Markdown (```...) हटाना
+        cleaned = cleaned.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
+        
+        // 2. AI UI बटन्स और फालतू शब्द
+        const garbage = ["code", "CSS", "Html", "JavaScript", "download", "content_copy", "expand_less", "play_circle", "play_arrow", "play_circle_outline"];
+        
+        let lines = cleaned.split('\n');
+        let finalLines = [];
+        
+        // एआई की बातचीत वाले कीवर्ड्स जो कोड के बाहर होने चाहिए
+        const conversationPatterns = /^(Step \d+|भाई[,!]|AJ की सलाह|ऊपर का|नीचे का|ध्यान से|सावधानी से|रिप्लेसमेंट|इस बदलाव|यहाँ से|पूरा ब्लॉक|सावधानी)/i;
+
+        for (let line of lines) {
+            let trimmed = line.trim();
+            if (!trimmed) { finalLines.push(line); continue; } // खाली लाइन रहने दें
+            if (garbage.includes(trimmed)) continue;
+            if (conversationPatterns.test(trimmed)) continue;
+            
+            finalLines.push(line);
+        }
+        
+        return finalLines.join('\n').trim();
+    }
+
+    function processAiText() {
+        const text = document.getElementById('aiPasteArea').value;
+        if (!text.trim()) { showCustomAlert("भाई जी, कुछ पेस्ट तो करो!"); return; }
+
+        pendingUpdates = [];
+        
+        // --- SMART SPLIT LOGIC ---
+        // एआई कभी "Search (Description):" लिखता है तो कभी "Search:"
+        // हम "Search" शब्द के आधार पर टुकड़े करेंगे
+        const rawSegments = text.split(/\n?\s*Search/i);
+        
+        // पहला हिस्सा (Index 0) इंट्रो होता है, उसे छोड़ देंगे
+        for (let i = 1; i < rawSegments.length; i++) {
+            const segment = rawSegments[i];
+            
+            // हर सेगमेंट में "Replace" ढूंढेंगे
+            const parts = segment.split(/Replace(?: with)?:?/i);
+            
+            if (parts.length >= 2) {
+                // 'Search' के बाद जो भी कोलन या ब्रैकेट है उसे साफ़ करके असली कोड उठाना
+                let sRaw = parts[0].replace(/^.*?:/s, '').trim(); 
+                let rRaw = parts[1].trim();
+
+                let sBlock = cleanCodeBlock(sRaw);
+                let rBlock = cleanCodeBlock(rRaw);
+
+                if (sBlock && rBlock) {
+                    pendingUpdates.push({ search: sBlock, replace: rBlock });
+                }
+            }
+        }
+
+        if (pendingUpdates.length === 0) {
+            showCustomAlert("भाई जी, कोई Search/Replace ब्लॉक नहीं मिला। एआई का पूरा मैसेज सही से पेस्ट करें।");
+            return;
+        }
+
+        generateReport();
+    }
+
+    function generateReport() {
+        const reportList = document.getElementById('aiReportList');
+        reportList.innerHTML = '';
+        let matchCount = 0;
+
+        pendingUpdates.forEach((update, index) => {
+            // एडिटर में कोड ढूँढना (Exact Match)
+            const exists = aceEditor.getValue().includes(update.search);
+            if (exists) matchCount++;
+
+            const item = document.createElement('div');
+            item.className = `report-item ${exists ? 'match-success' : 'match-fail'}`;
+            item.innerHTML = `
+                <div class="report-info">
+                    <span class="report-title">ब्लॉक ${index + 1}</span>
+                    <span class="report-status">${exists ? '<i class="fas fa-check"></i> मिल गया (Ready)' : '<i class="fas fa-times"></i> नहीं मिला (Check AI Text)'}</span>
+                </div>
+                <div class="report-actions">
+                    <button class="btn-mini btn-mini-copy" onclick="copyToClipboard(\`blockSearch_${index}\`)" title="सर्च कोड कॉपी करें">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button class="btn-mini btn-mini-debug" onclick="debugAiBlock(${index})" title="एडिटर में ढूँढें">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <textarea id="blockSearch_${index}" style="display:none;">${update.search}</textarea>
+                </div>
+            `;
+            reportList.appendChild(item);
+        });
+
+        closeSmartUpdateModal();
+        document.getElementById('aiReportModal').style.display = 'flex';
+        
+        // "बदलाव लागू करें" बटन को तभी इनेबल करें जब कम से कम 1 मैच हो
+        document.getElementById('applyAiUpdateBtn').disabled = (matchCount === 0);
+    }
+
+    function copyToClipboard(id) {
+        const text = document.getElementById(id).value;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("सर्च ब्लॉक कॉपी हो गया!");
+        });
+    }
+
+    function debugAiBlock(index) {
+        const searchText = pendingUpdates[index].search;
+        document.getElementById('findBlock').value = searchText;
+        closeReportModal();
+        if (window.innerWidth <= 768) showSection('editor');
+        findAndSelectText();
+    }
+
+    async function applySmartUpdates() {
+        let appliedCount = 0;
+        let failCount = 0;
+        const fullCode = aceEditor.getValue();
+        let newCode = fullCode;
+
+        pendingUpdates.forEach(update => {
+            if (newCode.includes(update.search)) {
+                // Exact Match Replacement
+                newCode = newCode.split(update.search).join(update.replace);
+                appliedCount++;
+            } else {
+                failCount++;
+            }
+        });
+
+        if (appliedCount > 0) {
+            aceEditor.setValue(newCode, -1);
+            updateChangeCounter(appliedCount);
+            showToast(`${appliedCount} ब्लॉक अपडेट हो गए!`);
+        }
+
+        closeReportModal();
+        
+        if (failCount > 0) {
+            showCustomAlert(`${failCount} ब्लॉक मैच नहीं हुए और छोड़ दिए गए। कृपया उन्हें मैन्युअली चेक करें।`);
+        }
+    }
 
     document.addEventListener('click', (event) => {
         if (sidePanel.classList.contains('open') && !sidePanel.contains(event.target) && !hamburgerMenu.contains(event.target)) {
