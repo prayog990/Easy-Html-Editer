@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Html Editor v3.0</title>
+    <title>Easy Html Editer v1.0</title>
     <!-- Ace Editor Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ext-language_tools.min.js"></script>
@@ -72,38 +72,7 @@
             scrollbar-gutter: stable;
         }
 
-        /* --- Grand Entry Splash Screen --- */
-        #appSplashScreen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #121212; z-index: 99999;
-            display: flex; justify-content: center; align-items: center;
-            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
-        }
-        .splash-content { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .splash-icon {
-            font-size: 50px; color: #007aff;
-            filter: drop-shadow(0 0 15px rgba(0, 122, 255, 0.6));
-            animation: floatIcon 3s ease-in-out infinite;
-        }
-        #appSplashScreen h1 {
-            font-size: 24px; font-weight: 800; color: white; margin: 0;
-            background: linear-gradient(90deg, #007aff, #00c6ff);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            letter-spacing: 1px; opacity: 0; animation: fadeInText 0.8s ease-out forwards 0.3s;
-        }
-        .loading-bar {
-            width: 150px; height: 4px; background: rgba(255,255,255,0.1);
-            border-radius: 4px; overflow: hidden; margin-top: 10px; opacity: 0;
-            animation: fadeInText 0.8s ease-out forwards 0.5s;
-        }
-        .bar-fill {
-            width: 0%; height: 100%; background: #007aff;
-            box-shadow: 0 0 10px #007aff;
-            animation: loadBar 0.9s ease-in-out forwards;
-        }
-        @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes fadeInText { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes loadBar { 0% { width: 0%; } 50% { width: 70%; } 100% { width: 100%; } }
+        
 
         /* --- Header --- */
         .header {
@@ -292,14 +261,63 @@
         body.fullscreen-preview .fullscreen-btn .fa-expand { display: none; }
         body.fullscreen-preview .fullscreen-btn .fa-compress { display: inline-block; }
 
-        .find-nav-container { display: none; }
-        .btn-nav {
-            background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-muted-color);
-            padding: 5px 10px; font-size: 14px; border-radius: 4px; cursor: pointer;
+        /* AJ New: Navigation Container with Pop-in Animation */
+        @keyframes searchPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
         }
-        .btn-nav:hover { background: var(--border-color); }
-        .btn-nav.active { color: var(--accent-color); }
-        .btn-nav:disabled { color: #555; cursor: not-allowed; }
+
+        .find-nav-container { 
+            display: none; 
+            align-items: center; 
+            gap: 12px; /* बटन्स और बैज के बीच सुंदर गैप */
+            background: transparent;
+            padding: 0;
+            border: none;
+            animation: searchPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-left: 10px;
+        }
+
+        #matchCounter {
+            font-size: 12px; /* पढ़ने में आसान */
+            font-weight: 700;
+            color: white !important;
+            background: var(--accent-color);
+            padding: 0 15px; /* प्रीमियम फील के लिए साइड स्पेस */
+            border-radius: 6px; /* बटन्स के कोनों के साथ परफेक्ट मैच */
+            letter-spacing: 0.8px;
+            white-space: nowrap;
+            display: flex; /* वर्टिकल सेंटर के लिए */
+            align-items: center;
+            height: 34px; /* बटन्स की हाइट के एकदम बराबर */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .btn-nav {
+            background: transparent; 
+            border: 1.5px solid var(--accent-color); 
+            color: var(--accent-color);
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 6px; /* वापस चोकोर (Square) */
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        /* AJ Fix: Sticky Toggle State */
+        .btn-nav.toggled {
+            background: var(--accent-color) !important;
+            color: white !important;
+        }
+
+        .btn-nav:active { transform: scale(0.9); }
+
+        .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; border-color: var(--text-muted-color); color: var(--text-muted-color); }
+        
         #replaceAllBtn { display: none; margin-left: 10px; }
         
         /* --- Universal Side Panel --- */
@@ -496,21 +514,6 @@
             border: 1px solid rgba(255, 159, 10, 0.4);
             border-radius: 2px;
         }
-        /* AI Report Item Styles */
-        .report-item {
-            display: flex; align-items: center; justify-content: space-between;
-            background: var(--surface-color); padding: 12px; border-radius: 8px;
-            margin-bottom: 8px; border-left: 4px solid #555;
-        }
-        .report-item.match-success { border-left-color: var(--accent-success-color); }
-        .report-item.match-fail { border-left-color: var(--accent-danger-color); }
-        .report-info { flex: 1; margin-right: 10px; }
-        .report-title { font-weight: bold; font-size: 13px; display: block; }
-        .report-status { font-size: 11px; color: var(--text-muted-color); }
-        .report-actions { display: flex; gap: 5px; }
-        .btn-mini { padding: 5px 8px; font-size: 11px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-mini-copy { background: #333; color: #fff; }
-        .btn-mini-debug { background: var(--accent-color); color: white; }
 
         /* सर्च मैच को फोकस करने के लिए ग्लो एनीमेशन */
         .current-match-glow {
@@ -620,18 +623,11 @@
     </style>
 </head>
 <body>
-    <!-- Premium App Splash Screen -->
-    <div id="appSplashScreen">
-        <div class="splash-content">
-            <div class="splash-icon"><i class="fas fa-code"></i></div>
-            <h1>Easy Html Editor</h1>
-            <div class="loading-bar"><div class="bar-fill"></div></div>
-        </div>
-    </div>
+    
 
     <!-- Header -->
     <div class="header">
-        <h1>Easy Html Editor</h1>
+        <h1>Easy Html Editer v1.0</h1>
         <button class="theme-toggle" onclick="toggleLightDark()">
             <i class="fas fa-sun"></i> <span>Light Mode</span>
         </button>
@@ -645,12 +641,7 @@
         <div class="input-container">
             <label for="findBlock" style="display: flex; justify-content: space-between; align-items: center;">
                 <span><i class="fas fa-search"></i> इस कोड को खोजें:</span> 
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button id="smartUpdateBtn" class="btn" onclick="openSmartUpdateModal()" style="padding: 4px 10px; font-size: 11px; background: linear-gradient(135deg, #6e8efb, #a777e3); border: none; box-shadow: 0 0 10px rgba(110, 142, 251, 0.4); display: none;">
-                        <i class="fas fa-robot"></i> AI SMART UPDATE
-                    </button>
-                    <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 13px;"></span>
-                </div>
+                <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 13px;"></span>
             </label>
             <div class="textarea-wrapper">
                 <textarea id="findBlock" placeholder="यहाँ पुराना कोड पेस्ट करें..."></textarea>
@@ -830,34 +821,6 @@
         </div>
     </div>
 
-    <!-- AI Smart Update Modal -->
-    <div class="modal-overlay" id="smartUpdateModal">
-        <div class="modal-box" style="width: 500px; max-width: 95%; border-top: 5px solid #a777e3;">
-            <h3 style="margin-bottom: 15px; color: var(--text-color);"><i class="fas fa-robot"></i> AI Smart Update</h3>
-            <p style="font-size: 13px; margin-bottom: 15px; color: var(--text-muted-color);">AI द्वारा दिया गया पूरा मैसेज यहाँ पेस्ट करें। हम अपने आप Search/Replace ब्लॉक्स ढूँढ लेंगे।</p>
-            <textarea id="aiPasteArea" placeholder="अपना टेक्स्ट यहाँ पेस्ट करें..." 
-                      style="width: 100%; height: 200px; background: var(--input-bg); border: 1.5px solid var(--input-border); color: var(--text-color); border-radius: 10px; padding: 12px; font-size: 13px; outline: none; margin-bottom: 15px; resize: none;"></textarea>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeSmartUpdateModal()">Cancel</button>
-                <button class="btn" onclick="processAiText()" style="background: #a777e3; color: white;">जाँच करें (Verify)</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- AI Report Modal -->
-    <div class="modal-overlay" id="aiReportModal">
-        <div class="modal-box" style="width: 550px; max-width: 95%; text-align: left;">
-            <h3 style="margin-bottom: 10px; text-align: center;"><i class="fas fa-clipboard-check"></i> अपडेट रिपोर्ट</h3>
-            <div id="aiReportList" style="max-height: 350px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 10px;">
-                <!-- Report Items will be injected here -->
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
-                <button id="applyAiUpdateBtn" class="btn btn-success" onclick="applySmartUpdates()">बदलाव लागू करें</button>
-            </div>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="renameModal">
         <div class="modal-box" style="border-top: 5px solid var(--accent-color);">
             <h3 style="margin-bottom: 20px; color: var(--text-color); font-weight: 700; font-size: 18px;">फाइल का नाम बदलें</h3>
@@ -891,17 +854,7 @@
     let currentMarkers = []; 
     let originalFileName = 'index.html'; 
 
-    // --- Splash Screen Logic ---
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            const splash = document.getElementById('appSplashScreen');
-            if(splash) {
-                splash.style.opacity = '0';
-                splash.style.visibility = 'hidden';
-                setTimeout(() => splash.remove(), 600);
-            }
-        }, 1000);
-    });
+    
 
     // --- THEME MANAGEMENT ---
     function setLightDark(mode) {
@@ -1133,31 +1086,50 @@
         }
     }
     
-    function findAndSelectText() {
+    async function findAndSelectText() {
         clearAllMarks(); 
+        
+        // AJ Fix: नई सर्च शुरू होते ही बटन्स को एकदम फ्रेश (Unpressed) कर दो
+        document.getElementById('findNextBtn').classList.remove('toggled');
+        document.getElementById('findPrevBtn').classList.remove('toggled');
+
         const codeToFind = document.getElementById('findBlock').value;
         const findNavContainer = document.getElementById('findNavContainer');
         const replaceAllBtn = document.getElementById('replaceAllBtn');
+        
         if (!codeToFind) {
             showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
             return;
         }
-        // स्मार्ट सर्च लॉजिक का इस्तेमाल - यहाँ हमने केस सेंसिटिविटी को और मजबूत किया है
-        const smartRegex = createSmartSearchRegex(codeToFind);const matchesFound = aceEditor.findAll(codeToFind, { 
-            regExp: false, // रेगुलर एक्सप्रेशन बंद, अब सिर्फ Exact Match होगा
+
+        const matchesFound = aceEditor.findAll(codeToFind, { 
+            regExp: false, 
             caseSensitive: false, 
             wholeWord: false,
             wrap: true,
             preventScroll: false 
         });
-        
     
         if (matchesFound > 0) {
             if (window.innerWidth <= 768) showSection('editor');
-            findNavContainer.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
-            replaceAllBtn.style.display = matchesFound > 1 ? 'inline-flex' : 'none';
             
-            // काउंटर और फोकस अपडेट करें
+            // AJ Fix: स्टोर करें कि कितने मैच मिले और पहला इंडेक्स सेट करें
+            searchMatches = aceEditor.session.getSelection().getAllRanges();
+            currentMatchIndex = 0;
+
+            // अगर 1 से ज्यादा मैच हैं, तो पहले सुंदर पॉप-अप दिखाओ
+            if (matchesFound > 1) {
+                findNavContainer.style.display = 'none'; // पहले छुपा कर रखें
+                await showCustomAlert(`कुल ${matchesFound} मैच मिले हैं! अब आप एरो बटन्स से इन्हें चेक कर सकते हैं।`);
+                
+                // OK करने के बाद नेविगेशन दिखाओ (एनीमेशन CSS से खुद होगा)
+                findNavContainer.style.display = 'inline-flex';
+                replaceAllBtn.style.display = 'inline-flex';
+            } else {
+                findNavContainer.style.display = 'none';
+                replaceAllBtn.style.display = 'none';
+            }
+            
             updateMatchDisplay();
             focusCurrentMatch();
         } else {
@@ -1168,20 +1140,21 @@
     }
     
     async function replaceCodeBlock() {
-        const Range = ace.require('ace/range').Range;
+        const codeToFind = document.getElementById('findBlock').value;
         const newText = document.getElementById('replaceBlock').value;
+
+        // AJ Fix: Same code check
+        if (codeToFind === newText) {
+            showCustomAlert('पुराना और नया कोड बिल्कुल एक जैसा है, कुछ भी बदलने की ज़रूरत नहीं है।');
+            return;
+        }
+
+        const Range = ace.require('ace/range').Range;
         const currentRange = aceEditor.getSelectionRange();
         
         if (!currentRange || aceEditor.selection.isEmpty()) {
              showCustomAlert('पहले "खोजें" बटन दबाकर टेक्स्ट सिलेक्ट करें।');
              return;
-        }
-
-        // हेल्थ चेक
-        const problems = checkHtmlHealth(newText);
-        if (problems.length > 0) {
-            const proceed = await showCustomConfirm(`चेतावनी: नए कोड में कुछ गड़बड़ लग रही है:\n- ${problems.join('\n- ')}\n\nक्या आप फिर भी इसे बदलना चाहते हैं?`);
-            if (!proceed) return;
         }
 
         clearAllMarks();
@@ -1191,8 +1164,7 @@
         aceEditor.replace(newText);
         updateChangeCounter(1);
 
-        // SYNC FIX: रिप्लेसमेंट के बाद काउंटर को अपडेट करना
-        const codeToFind = document.getElementById('findBlock').value;
+        // SYNC FIX: रिप्लेसमेंट के बाद काउंटर को अपडेट करना (AJ Fix: Redeclaration removed)
         if (codeToFind) {
             const smartRegex = createSmartSearchRegex(codeToFind);
             const remainingMatches = aceEditor.findAll(smartRegex, { regExp: true, caseSensitive: false });
@@ -1232,13 +1204,13 @@
         const codeToFind = document.getElementById('findBlock').value;
         const codeToReplace = document.getElementById('replaceBlock').value;
 
-        const smartRegex = createSmartSearchRegex(codeToFind);
-        const problems = checkHtmlHealth(codeToReplace);
-
-        if (problems.length > 0) {
-            const proceed = await showCustomConfirm(`सावधान! नए कोड में समस्या है:\n- ${problems.join('\n- ')}\n\nक्या आप सभी जगह इसे बदलना चाहते हैं?`);
-            if (!proceed) return;
+        // AJ Fix: Same code check
+        if (codeToFind === codeToReplace) {
+            showCustomAlert('पुराना और नया कोड बिल्कुल एक जैसा है, कुछ भी बदलने की ज़रूरत नहीं है।');
+            return;
         }
+
+        const smartRegex = createSmartSearchRegex(codeToFind);
 
         const matchesFound = aceEditor.findAll(smartRegex, { regExp: true });
         if (matchesFound > 0) {
@@ -1257,22 +1229,52 @@
     }
 
     function findNext() { 
-        aceEditor.findNext();
+        if (searchMatches.length === 0) return;
+        currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
+        aceEditor.selection.setRange(searchMatches[currentMatchIndex]);
+        
+        const nextBtn = document.getElementById('findNextBtn');
+        const prevBtn = document.getElementById('findPrevBtn');
+
+        // AJ Fix: अगर वापस पहली पोजीशन (0) पर आ गए तो दोनों रिसेट करो
+        if (currentMatchIndex === 0) {
+            nextBtn.classList.remove('toggled');
+            prevBtn.classList.remove('toggled');
+        } else {
+            nextBtn.classList.add('toggled');
+            prevBtn.classList.remove('toggled');
+        }
+        
         updateMatchDisplay();
         focusCurrentMatch();
     }
     function findPrev() { 
-        aceEditor.findPrevious();
+        if (searchMatches.length === 0) return;
+        currentMatchIndex = (currentMatchIndex - 1 + searchMatches.length) % searchMatches.length;
+        aceEditor.selection.setRange(searchMatches[currentMatchIndex]);
+        
+        const nextBtn = document.getElementById('findNextBtn');
+        const prevBtn = document.getElementById('findPrevBtn');
+
+        // AJ Fix: अगर वापस पहली पोजीशन (0) पर आ गए तो दोनों रिसेट करो
+        if (currentMatchIndex === 0) {
+            nextBtn.classList.remove('toggled');
+            prevBtn.classList.remove('toggled');
+        } else {
+            prevBtn.classList.add('toggled');
+            nextBtn.classList.remove('toggled');
+        }
+        
         updateMatchDisplay();
         focusCurrentMatch();
     }
 
-    // मैच काउंटर (1 of 5) अपडेट करने के लिए
+    // AJ Fix: मैच काउंटर अब ग्लोबल लिस्ट से चलेगा
     function updateMatchDisplay() {
-        const matches = aceEditor.session.getSelection().getAllRanges();
-        const total = matches.length;
-        const current = aceEditor.selection.index + 1 || 1;
+        const total = searchMatches.length;
+        const current = currentMatchIndex + 1;
         const counter = document.getElementById('matchCounter');
+        
         if (total > 0) {
             counter.textContent = `${current} of ${total}`;
             counter.style.color = 'var(--accent-warning-color)';
@@ -1306,7 +1308,6 @@
                 document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
                 const findLabelName = document.getElementById('uploadedFileName');
                 if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${file.name}`;
-                document.getElementById('smartUpdateBtn').style.display = 'inline-flex'; // AI Button Show
                 resetChangeCounter();
                 setTimeout(() => { aceEditor.resize(); }, 100); 
             };
@@ -1525,18 +1526,6 @@
         if (window.innerWidth <= 768) { showSection('editor'); }
     });
 
-    // कोड की सेहत जाँचने वाला फंक्शन
-    function checkHtmlHealth(html) {
-        const tags = ['div', 'span', 'p', 'table', 'ul', 'li', 'section', 'b', 'i'];
-        let issues = [];
-        tags.forEach(tag => {
-            const openCount = (html.match(new RegExp('<' + tag + '(?![a-z])', 'gi')) || []).length;
-            const closeCount = (html.match(new RegExp('</' + tag + '>', 'gi')) || []).length;
-            if (openCount > closeCount) issues.push(`<${tag}> बंद नहीं हुआ है`);
-            if (closeCount > openCount) issues.push(`</${tag}> फालतू लगा है`);
-        });
-        return issues;
-    }
 
     // सर्च कोड को फ्लेक्सिबल बनाने वाला फंक्शन
    function createSmartSearchRegex(str) {
@@ -1583,172 +1572,6 @@
         }
         if (e.key === 'Escape' && sidePanelOpen) toggleSidePanel();
     });
-
-    // --- AI SMART UPDATE SYSTEM (AJ Logic) ---
-    let pendingUpdates = [];
-
-    function openSmartUpdateModal() {
-        document.getElementById('smartUpdateModal').style.display = 'flex';
-        document.getElementById('aiPasteArea').value = '';
-    }
-
-    function closeSmartUpdateModal() {
-        document.getElementById('smartUpdateModal').style.display = 'none';
-    }
-
-    function closeReportModal() {
-        document.getElementById('aiReportModal').style.display = 'none';
-    }
-
-    // AJ Universal Parser v1.1.2: एआई की हर कोडिंग स्टाइल को पहचानने के लिए
-    function cleanCodeBlock(text) {
-        if (!text) return "";
-        let cleaned = text;
-        
-        // 1. Markdown (```...) हटाना
-        cleaned = cleaned.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
-        
-        // 2. AI UI बटन्स और फालतू शब्द
-        const garbage = ["code", "CSS", "Html", "JavaScript", "download", "content_copy", "expand_less", "play_circle", "play_arrow", "play_circle_outline"];
-        
-        let lines = cleaned.split('\n');
-        let finalLines = [];
-        
-        // एआई की बातचीत वाले कीवर्ड्स जो कोड के बाहर होने चाहिए
-        const conversationPatterns = /^(Step \d+|भाई[,!]|AJ की सलाह|ऊपर का|नीचे का|ध्यान से|सावधानी से|रिप्लेसमेंट|इस बदलाव|यहाँ से|पूरा ब्लॉक|सावधानी)/i;
-
-        for (let line of lines) {
-            let trimmed = line.trim();
-            if (!trimmed) { finalLines.push(line); continue; } // खाली लाइन रहने दें
-            if (garbage.includes(trimmed)) continue;
-            if (conversationPatterns.test(trimmed)) continue;
-            
-            finalLines.push(line);
-        }
-        
-        return finalLines.join('\n').trim();
-    }
-
-    function processAiText() {
-        const text = document.getElementById('aiPasteArea').value;
-        if (!text.trim()) { showCustomAlert("भाई जी, कुछ पेस्ट तो करो!"); return; }
-
-        pendingUpdates = [];
-        
-        // --- SMART SPLIT LOGIC ---
-        // एआई कभी "Search (Description):" लिखता है तो कभी "Search:"
-        // हम "Search" शब्द के आधार पर टुकड़े करेंगे
-        const rawSegments = text.split(/\n?\s*Search/i);
-        
-        // पहला हिस्सा (Index 0) इंट्रो होता है, उसे छोड़ देंगे
-        for (let i = 1; i < rawSegments.length; i++) {
-            const segment = rawSegments[i];
-            
-            // हर सेगमेंट में "Replace" ढूंढेंगे
-            const parts = segment.split(/Replace(?: with)?:?/i);
-            
-            if (parts.length >= 2) {
-                // 'Search' के बाद जो भी कोलन या ब्रैकेट है उसे साफ़ करके असली कोड उठाना
-                let sRaw = parts[0].replace(/^.*?:/s, '').trim(); 
-                let rRaw = parts[1].trim();
-
-                let sBlock = cleanCodeBlock(sRaw);
-                let rBlock = cleanCodeBlock(rRaw);
-
-                if (sBlock && rBlock) {
-                    pendingUpdates.push({ search: sBlock, replace: rBlock });
-                }
-            }
-        }
-
-        if (pendingUpdates.length === 0) {
-            showCustomAlert("भाई जी, कोई Search/Replace ब्लॉक नहीं मिला। एआई का पूरा मैसेज सही से पेस्ट करें।");
-            return;
-        }
-
-        generateReport();
-    }
-
-    function generateReport() {
-        const reportList = document.getElementById('aiReportList');
-        reportList.innerHTML = '';
-        let matchCount = 0;
-
-        pendingUpdates.forEach((update, index) => {
-            // एडिटर में कोड ढूँढना (Exact Match)
-            const exists = aceEditor.getValue().includes(update.search);
-            if (exists) matchCount++;
-
-            const item = document.createElement('div');
-            item.className = `report-item ${exists ? 'match-success' : 'match-fail'}`;
-            item.innerHTML = `
-                <div class="report-info">
-                    <span class="report-title">ब्लॉक ${index + 1}</span>
-                    <span class="report-status">${exists ? '<i class="fas fa-check"></i> मिल गया (Ready)' : '<i class="fas fa-times"></i> नहीं मिला (Check AI Text)'}</span>
-                </div>
-                <div class="report-actions">
-                    <button class="btn-mini btn-mini-copy" onclick="copyToClipboard(\`blockSearch_${index}\`)" title="सर्च कोड कॉपी करें">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                    <button class="btn-mini btn-mini-debug" onclick="debugAiBlock(${index})" title="एडिटर में ढूँढें">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <textarea id="blockSearch_${index}" style="display:none;">${update.search}</textarea>
-                </div>
-            `;
-            reportList.appendChild(item);
-        });
-
-        closeSmartUpdateModal();
-        document.getElementById('aiReportModal').style.display = 'flex';
-        
-        // "बदलाव लागू करें" बटन को तभी इनेबल करें जब कम से कम 1 मैच हो
-        document.getElementById('applyAiUpdateBtn').disabled = (matchCount === 0);
-    }
-
-    function copyToClipboard(id) {
-        const text = document.getElementById(id).value;
-        navigator.clipboard.writeText(text).then(() => {
-            showToast("सर्च ब्लॉक कॉपी हो गया!");
-        });
-    }
-
-    function debugAiBlock(index) {
-        const searchText = pendingUpdates[index].search;
-        document.getElementById('findBlock').value = searchText;
-        closeReportModal();
-        if (window.innerWidth <= 768) showSection('editor');
-        findAndSelectText();
-    }
-
-    async function applySmartUpdates() {
-        let appliedCount = 0;
-        let failCount = 0;
-        const fullCode = aceEditor.getValue();
-        let newCode = fullCode;
-
-        pendingUpdates.forEach(update => {
-            if (newCode.includes(update.search)) {
-                // Exact Match Replacement
-                newCode = newCode.split(update.search).join(update.replace);
-                appliedCount++;
-            } else {
-                failCount++;
-            }
-        });
-
-        if (appliedCount > 0) {
-            aceEditor.setValue(newCode, -1);
-            updateChangeCounter(appliedCount);
-            showToast(`${appliedCount} ब्लॉक अपडेट हो गए!`);
-        }
-
-        closeReportModal();
-        
-        if (failCount > 0) {
-            showCustomAlert(`${failCount} ब्लॉक मैच नहीं हुए और छोड़ दिए गए। कृपया उन्हें मैन्युअली चेक करें।`);
-        }
-    }
 
     document.addEventListener('click', (event) => {
         if (sidePanel.classList.contains('open') && !sidePanel.contains(event.target) && !hamburgerMenu.contains(event.target)) {
