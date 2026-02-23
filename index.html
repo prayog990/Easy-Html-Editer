@@ -393,7 +393,7 @@
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0, 0, 0, 0.6);
-            z-index: 5000; display: none; justify-content: center; align-items: center; 
+            z-index: 11000; display: none; justify-content: center; align-items: center; 
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             transition: all 0.3s ease;
         }
@@ -591,7 +591,7 @@
             .editor-section.active, .preview-section.active { display: flex; position: relative; }
             .preview-section { border-left: none; }
             
-            .hamburger-menu { display: block; background: var(--header-color); color: var(--text-color); border: none; font-size: 20px; padding: 0 10px; cursor: pointer; position: absolute; right: 10px; top: 15px; z-index: 1100; }
+            .hamburger-menu { display: block; background: transparent; color: var(--text-color); border: none; font-size: 22px; padding: 5px; cursor: pointer; z-index: 1100; position: relative; display: flex; align-items: center; justify-content: center; }
             
             .tab-bar {
                 display: flex; justify-content: space-around; background: var(--surface-color);
@@ -628,12 +628,17 @@
     <!-- Header -->
     <div class="header">
         <h1>Easy Html Editer v1.0</h1>
-        <button class="theme-toggle" onclick="toggleLightDark()">
-            <i class="fas fa-sun"></i> <span>Light Mode</span>
-        </button>
-        <button class="hamburger-menu" onclick="toggleSidePanel()">
-            <i class="fas fa-bars"></i>
-        </button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button class="theme-toggle" onclick="toggleLightDark()" style="margin-right: 5px;">
+                <i class="fas fa-sun"></i> <span>Light Mode</span>
+            </button>
+            <button class="btn-icon" onclick="openMagicPanel()" title="AI Multi-Update" style="background: linear-gradient(135deg, #622774 0%, #c53364 100%); color: white; border: none; width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 4px 15px rgba(197, 51, 100, 0.4); flex-shrink: 0;">
+                <i class="fas fa-wand-magic-sparkles" style="font-size: 16px;"></i>
+            </button>
+            <button class="hamburger-menu" onclick="toggleSidePanel()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Search and Replace Toolbar -->
@@ -1578,6 +1583,300 @@
             toggleSidePanel();
         }
     });
+    </script>
+
+    <style>
+        /* --- AI Magic Panel Styles --- */
+        .magic-panel-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px);
+            z-index: 9999; display: none; flex-direction: column; padding: 20px;
+            color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-y: auto;
+        }
+        body.light-theme .magic-panel-overlay { background: rgba(240, 240, 240, 0.98); color: #222; }
+        
+        .magic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+        .magic-header h2 { font-size: 20px; background: linear-gradient(90deg, #ff00cc, #3333ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        #aiRawInput {
+            width: 100%; height: 150px; background: rgba(0,0,0,0.3); border: 1.5px dashed var(--accent-color);
+            border-radius: 12px; color: #fff; padding: 15px; font-size: 14px; resize: none; outline: none; transition: 0.3s;
+        }
+        body.light-theme #aiRawInput { background: #fff; color: #333; }
+        #aiRawInput:focus { background: rgba(0,0,0,0.5); box-shadow: 0 0 20px rgba(var(--accent-color-rgb), 0.2); }
+
+        .magic-actions { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        
+        /* AJ Slim Card Analysis Style */
+        .analysis-container { width: 100%; margin-top: 10px; display: none; }
+        .analysis-list { display: flex; flex-direction: column; gap: 6px; }
+        .update-card { 
+            background: rgba(255,255,255,0.03); border-radius: 6px; 
+            padding: 6px; border-left: 3px solid #555; position: relative;
+        }
+        .update-card.matched { border-left-color: var(--accent-success-color); }
+        .update-card.missing { border-left-color: var(--accent-danger-color); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .block-num { font-size: 9px; font-weight: 800; color: var(--text-muted-color); text-transform: uppercase; }
+        .status-mini { font-size: 9px; font-weight: bold; }
+        
+        .code-label { font-size: 7px; color: var(--accent-color); opacity: 0.7; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .code-box-mini { 
+            background: #0a0a0a; padding: 6px; border-radius: 4px; 
+            font-size: 8.5px; font-family: 'Monaco', 'Menlo', monospace; white-space: pre-wrap; 
+            word-break: break-all; line-height: 1.4; 
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        .card-matched-icon { color: var(--accent-success-color); font-size: 10px; }
+        .card-missing-icon { color: var(--accent-danger-color); font-size: 10px; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; text-transform: uppercase; }
+        .status-match { background: #30d158; color: #fff; }
+        .status-missing { background: #ff453a; color: #fff; }
+        
+        .code-preview-box { 
+            background: #000; color: #0f0; padding: 8px; border-radius: 4px; 
+            max-height: 100px; overflow-y: auto; white-space: pre-wrap; font-family: 'Monaco', monospace;
+            border: 1px solid #333; opacity: 0.8;
+        }
+        body.light-theme .code-preview-box { background: #f8f8f8; color: #d11141; border-color: #ddd; }
+
+        .btn-magic-main { background: var(--accent-color); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; }
+        .btn-close-magic { 
+            background: var(--accent-color); color: white; border: none; 
+            width: 38px; height: 38px; border-radius: 12px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.3s;
+            z-index: 10001;
+        }
+        .btn-close-magic:hover { transform: scale(1.1); filter: brightness(1.2); }
+        .btn-close-magic i { font-size: 18px; color: white !important; }
+    </style>
+
+    <div id="magicPanel" class="magic-panel-overlay">
+        <div class="magic-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-wand-magic-sparkles" style="color: var(--accent-color); font-size: 20px;"></i>
+                <h2 style="margin:0;">AI Multi-Update Magic</h2>
+            </div>
+            <button type="button" class="btn-close-magic" onclick="closeMagicPanel()" title="Back to Editor">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+        
+        <p style="font-size: 13px; margin-bottom: 10px; opacity: 0.8;">AJ का पूरा रिस्पांस यहाँ पेस्ट करें:</p>
+        <textarea id="aiRawInput" placeholder="Paste AJ's message here..."></textarea>
+        
+        <div class="magic-actions" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-magic-main" id="btnScanAI" onclick="scanAIUpdate()"><i class="fas fa-sync"></i> Scan & Extract</button>
+                <button class="btn-magic-main" id="btnResetMagic" onclick="resetMagicPanel()" style="background: var(--accent-danger-color); flex: 0.4;"><i class="fas fa-trash"></i></button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-magic-main" id="btnTogglePreview" style="display:none; background: var(--accent-warning-color);" onclick="togglePreviewReport()"><i class="fas fa-eye"></i> Show Preview</button>
+                <button class="btn-magic-main" id="btnApplyAll" style="display:none; background: #30d158;" onclick="applyAllAIChanges()"><i class="fas fa-check-double"></i> Apply All</button>
+            </div>
+        </div>
+
+        <div class="analysis-container" id="analysisContainer">
+            <div style="margin-bottom: 10px; font-weight: bold; color: var(--accent-warning-color); font-size: 11px;">
+                <i class="fas fa-robot"></i> AI Smart Update Summary
+            </div>
+            <div id="analysisList" class="analysis-list">
+                <!-- Slim cards will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openMagicPanel() { 
+            const panel = document.getElementById('magicPanel');
+            panel.style.display = 'flex'; 
+            document.body.style.overflow = 'hidden';
+            
+            // AJ: रिफ्रेश के बाद बचा हुआ डेटा लोड करना
+            const savedData = localStorage.getItem('ajMagicData');
+            if (savedData) {
+                document.getElementById('aiRawInput').value = savedData;
+            }
+        }
+        
+        function closeMagicPanel() { 
+            document.getElementById('magicPanel').style.display = 'none'; 
+            document.body.style.overflow = 'auto'; 
+        }
+
+        // AJ: डेटा को टाइप करते ही सेव करना (Persistence)
+        document.getElementById('aiRawInput').addEventListener('input', (e) => {
+            localStorage.setItem('ajMagicData', e.target.value);
+        });
+
+        function resetMagicPanel() {
+            if(confirm("Bhai ji, क्या आप पेस्ट किया हुआ डेटा साफ़ करना चाहते हैं?")) {
+                document.getElementById('aiRawInput').value = '';
+                localStorage.removeItem('ajMagicData'); // मेमोरी से भी साफ़
+                document.getElementById('analysisContainer').style.display = 'none';
+                document.getElementById('btnApplyAll').style.display = 'none';
+                document.getElementById('btnTogglePreview').style.display = 'none';
+                extractedUpdates = [];
+            }
+        }
+        function resetMagicPanel() {
+            if(confirm("Bhai ji, क्या आप पेस्ट किया हुआ डेटा साफ़ करना चाहते हैं?")) {
+                document.getElementById('aiRawInput').value = '';
+                document.getElementById('analysisContainer').style.display = 'none';
+                document.getElementById('btnApplyAll').style.display = 'none';
+                document.getElementById('btnTogglePreview').style.display = 'none';
+                extractedUpdates = [];
+            }
+        }
+        function togglePreviewReport() {
+            const container = document.getElementById('analysisContainer');
+            const btn = document.getElementById('btnTogglePreview');
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Report';
+            } else {
+                container.style.display = 'none';
+                btn.innerHTML = '<i class="fas fa-eye"></i> View Report';
+            }
+        }
+
+        let extractedUpdates = [];
+
+        // AJ Helper: कोड की फालतू खाली जगह (Indentation) साफ़ करने के लिए
+        function cleanIndentation(str) {
+            const lines = str.split('\n');
+            const minIndent = lines.filter(l => l.trim()).reduce((acc, line) => {
+                const indent = line.match(/^\s*/)[0].length;
+                return indent < acc ? indent : acc;
+            }, Infinity);
+            return lines.map(l => l.slice(minIndent === Infinity ? 0 : minIndent)).join('\n').trim();
+        }
+
+        function scanAIUpdate() {
+            const rawText = document.getElementById('aiRawInput').value;
+            const analysisBody = document.getElementById('analysisBody');
+            const analysisContainer = document.getElementById('analysisContainer');
+            const btnApplyAll = document.getElementById('btnApplyAll');
+            const currentCode = aceEditor.getValue();
+
+            if (!rawText.trim()) {
+                showToast("भाई जी, पहले कुछ पेस्ट तो करो!");
+                return;
+            }
+
+            const analysisList = document.getElementById('analysisList');
+            analysisList.innerHTML = '';
+            extractedUpdates = [];
+
+            // AJ Ultra Specific Regex: अब ये सिर्फ़ html, js, और css ब्लॉक्स को ही पहचानेगा
+            const searchRegex = /Search वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css)?\n([\s\S]*?)\n```[\s\S]{0,400}?Replace वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css)?\n([\s\S]*?)\n```/g;
+            
+            let match;
+            let count = 0;
+            let totalMatchesFound = 0;
+
+            while ((match = searchRegex.exec(rawText)) !== null) {
+                count++;
+                // AJ: De-indentation और Clean logic
+                let sCodeRaw = match[1].replace(/\r/g, "");
+                let rCodeRaw = match[2].replace(/\r/g, "");
+                
+                let sCode = sCodeRaw.trim();
+                let rCode = rCodeRaw.trim();
+
+                // रिपोर्ट में दिखाने के लिए सुंदर वर्ज़न (De-indented)
+                const displaySearch = cleanIndentation(sCodeRaw);
+                const displayReplace = cleanIndentation(rCodeRaw);
+
+                const isFound = currentCode.includes(sCode);
+                if(isFound) totalMatchesFound++;
+
+                extractedUpdates.push({ search: sCode, replace: rCode, matched: isFound });
+
+                // AJ Slim Card creation
+                const card = document.createElement('div');
+                card.className = `update-card ${isFound ? 'matched' : 'missing'}`;
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="block-num">Block ${count}</span>
+                        <span class="status-mini" style="color:${isFound ? 'var(--accent-success-color)' : 'var(--accent-danger-color)'}">
+                            ${isFound ? '<i class="fas fa-check-circle"></i> MATCHED' : '<i class="fas fa-times-circle"></i> MISSING'}
+                        </span>
+                    </div>
+                    <div class="code-label" style="color:#ff9f0a;">🔍 SEARCH FOR:</div>
+                    <div class="code-box-mini" style="margin-bottom:6px; color: #ff9f0a; border-color: rgba(255,159,10,0.2);">${escapeHtml(displaySearch)}</div>
+                    <div class="code-label" style="color:#30d158;">✨ REPLACE WITH:</div>
+                    <div class="code-box-mini" style="color: #30d158; border-color: rgba(48,209,88,0.2);">${escapeHtml(displayReplace)}</div>
+                `;
+                analysisList.appendChild(card);
+            }
+
+            if (count === 0) {
+                showToast("कोई Search/Replace ब्लॉक नहीं मिला!");
+                analysisContainer.style.display = 'none';
+                document.getElementById('btnTogglePreview').style.display = 'none';
+            } else {
+                // AJ: Scan के बाद अब सीधे रिपोर्ट नहीं, सिर्फ बटन दिखेगा
+                analysisContainer.style.display = 'none'; 
+                document.getElementById('btnTogglePreview').style.display = 'inline-block';
+                document.getElementById('btnTogglePreview').innerHTML = `<i class="fas fa-eye"></i> View Report (${count})`;
+                showToast(`${count} ब्लॉक्स मिले, ${totalMatchesFound} मैच हुए!`);
+                if (totalMatchesFound > 0) {
+                    btnApplyAll.style.display = 'inline-block';
+                }
+            }
+        }
+
+        async function applyAllAIChanges() {
+            const confirmed = await showCustomConfirm(`क्या आप सभी ${extractedUpdates.filter(u => u.matched).length} मैचिंग बदलाव एक साथ करना चाहते हैं?`);
+            if (!confirmed) return;
+
+            const Range = ace.require('ace/range').Range;
+            let successCount = 0;
+            clearAllMarks(); // पुराने हाइलाइट्स साफ़ करें
+
+            // AJ: हर अपडेट को बारी-बारी से प्रोसेस करना ताकि मार्क किया जा सके
+            extractedUpdates.forEach(update => {
+                if (update.matched) {
+                    // एडिटर में टेक्स्ट ढूँढना
+                    aceEditor.find(update.search, { regExp: false, wrap: true });
+                    let foundRange = aceEditor.getSelectionRange();
+
+                    if (!foundRange.isEmpty()) {
+                        const startRow = foundRange.start.row;
+                        const startCol = foundRange.start.column;
+
+                        // टेक्स्ट बदलना
+                        aceEditor.replace(update.replace);
+                        successCount++;
+
+                        // नए बदले हुए कोड की जगह को मार्क करना
+                        const endPos = aceEditor.getCursorPosition();
+                        const newMarkRange = new Range(startRow, startCol, endPos.row, endPos.column);
+                        const markerId = aceEditor.session.addMarker(newMarkRange, "green-marker", "text");
+                        currentMarkers.push(markerId);
+                    }
+                }
+            });
+
+            if (successCount > 0) {
+                updateChangeCounter(successCount);
+                showToast(`${successCount} बदलाव लागू और हाइलाइट किए गए! ✨`);
+                closeMagicPanel();
+                saveCodeToLocalStorage(); // मेमोरी में तुरंत सेव
+            } else {
+                showToast("बदलने के लिए कुछ नहीं मिला!");
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>
