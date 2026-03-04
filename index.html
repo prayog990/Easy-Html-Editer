@@ -518,11 +518,18 @@
         /* सर्च मैच को फोकस करने के लिए ग्लो एनीमेशन */
         .current-match-glow {
             position: absolute;
-            background-color: rgba(255, 159, 10, 0.5);
+            background-color: rgba(255, 159, 10, 0.6);
             z-index: 20;
             border-radius: 4px;
-            box-shadow: 0 0 20px rgba(255, 159, 10, 0.8);
-            animation: matchFocusGlow 1.5s ease-out forwards;
+            box-shadow: 0 0 25px rgba(255, 159, 10, 1);
+            animation: matchFocusGlow 1.8s ease-out forwards;
+        }
+        /* लाइन हाइलाइट ताकि आसपास का कोड (Context) दिखे */
+        .context-line-highlight {
+            position: absolute;
+            background-color: rgba(0, 199, 190, 0.15);
+            z-index: 5;
+            border-left: 4px solid #00c7be;
         }
         @keyframes matchFocusGlow {
             0% { opacity: 1; transform: scale(1.05); }
@@ -1586,47 +1593,198 @@
     </script>
 
     <style>
-        /* --- AI Magic Panel Styles --- */
+        /* --- AI Magic Panel Styles v1.15 (Glassmorphic) --- */
         .magic-panel-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px);
-            z-index: 9999; display: none; flex-direction: column; padding: 20px;
-            color: #e0e0e0; font-family: 'Segoe UI', sans-serif; overflow-y: auto;
+            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            z-index: 9999; display: none; flex-direction: column; padding: 15px;
+            color: #e0e0e0; font-family: 'Segoe UI', sans-serif;
         }
-        body.light-theme .magic-panel-overlay { background: rgba(240, 240, 240, 0.98); color: #222; }
+        body.light-theme .magic-panel-overlay { background: rgba(255, 255, 255, 0.85); color: #222; }
         
-        .magic-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
-        .magic-header h2 { font-size: 20px; background: linear-gradient(90deg, #ff00cc, #3333ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .magic-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 15px; padding-bottom: 10px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .magic-header h2 { 
+            font-size: 18px; font-weight: 800;
+            background: linear-gradient(90deg, var(--accent-color), #af52de);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
         
+        /* Auto-Collapse Logic for Input */
         #aiRawInput {
-            width: 100%; height: 150px; background: rgba(0,0,0,0.3); border: 1.5px dashed var(--accent-color);
-            border-radius: 12px; color: #fff; padding: 15px; font-size: 14px; resize: none; outline: none; transition: 0.3s;
+            width: 100%; height: 160px; background: rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px; color: #fff; padding: 12px; font-size: 13px; 
+            resize: none; outline: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
         }
-        body.light-theme #aiRawInput { background: #fff; color: #333; }
-        #aiRawInput:focus { background: rgba(0,0,0,0.5); box-shadow: 0 0 20px rgba(var(--accent-color-rgb), 0.2); }
+        #aiRawInput.collapsed { height: 45px; opacity: 0.6; cursor: pointer; overflow: hidden; }
+        #aiRawInput.collapsed:hover { opacity: 1; }
+        body.light-theme #aiRawInput { background: rgba(255,255,255,0.8); color: #333; border-color: #ddd; }
 
-        .magic-actions { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
-        
-        /* AJ Slim Card Analysis Style */
-        .analysis-container { width: 100%; margin-top: 10px; display: none; }
-        .analysis-list { display: flex; flex-direction: column; gap: 6px; }
-        .update-card { 
-            background: rgba(255,255,255,0.03); border-radius: 6px; 
-            padding: 6px; border-left: 3px solid #555; position: relative;
+.magic-actions-grid { 
+            display: grid; grid-template-columns: 1fr 50px 50px; gap: 10px; margin: 15px 0; 
         }
-        .update-card.matched { border-left-color: var(--accent-success-color); }
-        .update-card.missing { border-left-color: var(--accent-danger-color); }
+
+        /* AJ: Summary Box and Pills Styling */
+        .magic-summary-area {
+            background: rgba(255, 255, 255, 0.05); border-radius: 14px;
+            padding: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.08);
+            display: none; flex-direction: column; align-items: center; gap: 10px;
+        }
+        body.light-theme .magic-summary-area { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); }
+
+        .summary-stats { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent-success-color); }
+
+        .pill-container { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+        .block-pill {
+            padding: 4px 10px; border-radius: 50px; font-size: 10px; font-weight: 700;
+            cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; gap: 4px; color: white;
+        }
+        .block-pill.matched { background: rgba(48, 209, 88, 0.2); border-color: var(--accent-success-color); color: var(--accent-success-color); }
+        .block-pill.missing { background: rgba(255, 69, 58, 0.2); border-color: var(--accent-danger-color); color: var(--accent-danger-color); }
+        .block-pill:hover { transform: scale(1.1); filter: brightness(1.2); }
+
+        /* Results Area Scroll */
+        #magicResultsScroll {
+            flex: 1; overflow-y: auto; padding-right: 5px; 
+            padding-bottom: 100px; /* एक्स्ट्रा स्पेस ताकि कार्ड्स नीचे न छुपें */
+        }
+
+        /* Floating Footer Action - Modern Glassy Bar */
+        .magic-footer-actions {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            display: flex; gap: 12px; z-index: 100;
+            padding: 15px 20px 25px 20px;
+            background: rgba(20, 20, 20, 0.5);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        body.light-theme .magic-footer-actions {
+            background: rgba(245, 245, 245, 0.8);
+            border-top: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+        }
+
+        .btn-magic-pills {
+            padding: 12px 15px; border-radius: 14px; border: none; cursor: pointer;
+            font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: white;
+        }
+        /* Dummy Button State */
+        .btn-magic-pills.dummy {
+            background: rgba(100, 100, 100, 0.2) !important;
+            color: rgba(255, 255, 255, 0.3) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            box-shadow: none !important;
+            cursor: default;
+            pointer-events: none;
+        }
+        /* Success Screen Styling */
+        .magic-success-screen {
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 40px 20px; flex: 1;
+            animation: cardEntrance 0.6s ease-out;
+        }
+        .success-icon-circle {
+            width: 80px; height: 80px; background: rgba(48, 209, 88, 0.1);
+            border: 2px solid var(--accent-success-color); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 35px; color: var(--accent-success-color); margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(48, 209, 88, 0.2);
+        }
         
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .block-num { font-size: 9px; font-weight: 800; color: var(--text-muted-color); text-transform: uppercase; }
-        .status-mini { font-size: 9px; font-weight: bold; }
+        /* Report Button Contrast Fix */
+        #btnTogglePreview {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+        body.light-theme #btnTogglePreview {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            color: #111 !important; /* एकदम डार्क टेक्स्ट */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        body.light-theme #btnTogglePreview i { color: #111 !important; }
+        #btnTogglePreview:hover { filter: brightness(1.2); }
         
-        .code-label { font-size: 7px; color: var(--accent-color); opacity: 0.7; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        /* AJ Slim Card Analysis Style - v1.13 Updated */
+        .analysis-container { width: 100%; margin-top: 10px; display: none; }
+        .analysis-list { display: flex; flex-direction: column; gap: 8px; }
+        .update-card { 
+            background: rgba(255,255,255,0.03); border-radius: 14px; 
+            padding: 12px; border-left: 4px solid #555; position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Entrance Animation */
+            opacity: 0; transform: translateY(25px);
+            animation: cardEntrance 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+        }
+        @keyframes cardEntrance {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body.light-theme .update-card { background: rgba(0,0,0,0.04); border-color: #ccc; }
+        
+        /* Navigation Line Contrast Fix for Light Mode */
+        body.light-theme [id^="nav-line-"] { 
+            color: #0056b3 !important; /* Deep Blue for visibility */
+            font-weight: 800; opacity: 1 !important; 
+        }
+        body.light-theme .block-num { color: #555; font-weight: 900; }
+        .update-card.matched { border-left-color: var(--accent-success-color); background: rgba(48, 209, 88, 0.05); }
+        .update-card.missing { border-left-color: var(--accent-danger-color); background: rgba(255, 69, 58, 0.05); }
+        .update-card.conflict { border-left-color: var(--accent-warning-color); background: rgba(255, 159, 10, 0.05); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .block-num { font-size: 10px; font-weight: 800; color: var(--text-muted-color); text-transform: uppercase; }
+        .status-mini { font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        
+        .btn-copy-card {
+            background: rgba(255,255,255,0.05); border: none; color: var(--text-muted-color);
+            width: 26px; height: 26px; border-radius: 6px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .btn-copy-card:hover { background: var(--accent-color); color: white; transform: scale(1.1); }
+        body.light-theme .btn-copy-card { background: rgba(0,0,0,0.05); }
+
+        /* Navigation Controls inside Card */
+        .card-nav-controls { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .nav-btn-sm { 
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); 
+            color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 12px;
+            transition: 0.2s;
+        }
+        body.light-theme .nav-btn-sm { 
+            background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.1); 
+            color: #333; /* लाइट मोड में काला रंग */
+        }
+        .nav-btn-sm:hover { background: var(--accent-color); color: white !important; }
+        .apply-btn-sm { 
+            background: var(--accent-success-color); border: none; color: white; 
+            padding: 0 12px; height: 28px; border-radius: 6px; cursor: pointer;
+            font-size: 11px; font-weight: bold; flex: 1;
+        }
+
+        .code-label { font-size: 8px; color: var(--accent-color); opacity: 0.8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
         .code-box-mini { 
-            background: #0a0a0a; padding: 6px; border-radius: 4px; 
-            font-size: 8.5px; font-family: 'Monaco', 'Menlo', monospace; white-space: pre-wrap; 
-            word-break: break-all; line-height: 1.4; 
+            background: #0a0a0a; padding: 10px; border-radius: 10px; 
+            font-size: 9px; font-family: 'Monaco', 'Menlo', monospace; white-space: pre-wrap; 
+            word-break: normal; line-height: 1.4; 
             border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            max-height: 120px; overflow-y: auto; position: relative;
+            transition: 0.3s;
+            scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent;
+        }
+        .code-box-mini::-webkit-scrollbar { width: 3px; }
+        .code-box-mini::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 10px; }
+        body.light-theme .code-box-mini { 
+            background: rgba(0,0,0,0.05); color: #111; 
+            border: 1px solid rgba(0,0,0,0.1); box-shadow: none; 
         }
         .card-matched-icon { color: var(--accent-success-color); font-size: 10px; }
         .card-missing-icon { color: var(--accent-danger-color); font-size: 10px; }
@@ -1657,35 +1815,68 @@
     <div id="magicPanel" class="magic-panel-overlay">
         <div class="magic-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-wand-magic-sparkles" style="color: var(--accent-color); font-size: 20px;"></i>
-                <h2 style="margin:0;">AI Multi-Update Magic</h2>
+                <i class="fas fa-wand-magic-sparkles" style="color: var(--accent-color); font-size: 18px;"></i>
+                <h2 style="margin:0;">Magic Update Panel</h2>
             </div>
-            <button type="button" class="btn-close-magic" onclick="closeMagicPanel()" title="Back to Editor">
-                <i class="fas fa-chevron-left"></i>
+            <button type="button" class="btn-close-magic" onclick="closeMagicPanel()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 10px;">
+                <i class="fas fa-times" style="font-size: 14px; color: var(--text-color) !important;"></i>
             </button>
         </div>
         
-        <p style="font-size: 13px; margin-bottom: 10px; opacity: 0.8;">AJ का पूरा रिस्पांस यहाँ पेस्ट करें:</p>
-        <textarea id="aiRawInput" placeholder="Paste AJ's message here..."></textarea>
-        
-        <div class="magic-actions" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-magic-main" id="btnScanAI" onclick="scanAIUpdate()"><i class="fas fa-sync"></i> Scan & Extract</button>
-                <button class="btn-magic-main" id="btnResetMagic" onclick="resetMagicPanel()" style="background: var(--accent-danger-color); flex: 0.4;"><i class="fas fa-trash"></i></button>
+        <div id="magicInputContainer">
+            <textarea id="aiRawInput" placeholder="AJ का मैसेज यहाँ पेस्ट करें..." onclick="this.classList.remove('collapsed')"></textarea>
+            
+            <div class="magic-actions-grid" style="grid-template-columns: 1fr 50px;">
+                <button class="btn-magic-pills" onclick="scanAIUpdate()" style="background: var(--accent-color); box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);">
+                    <i class="fas fa-bolt"></i> Scan AI Message
+                </button>
+                <button class="btn-magic-pills" onclick="resetMagicPanel()" style="background: #333; border: 1px solid #444;">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-magic-main" id="btnTogglePreview" style="display:none; background: var(--accent-warning-color);" onclick="togglePreviewReport()"><i class="fas fa-eye"></i> Show Preview</button>
-                <button class="btn-magic-main" id="btnApplyAll" style="display:none; background: #30d158;" onclick="applyAllAIChanges()"><i class="fas fa-check-double"></i> Apply All</button>
+
+            <div id="magicSummaryArea" class="magic-summary-area">
+                <div id="summaryStats" class="summary-stats"></div>
+                <div id="pillContainer" class="pill-container"></div>
             </div>
         </div>
 
-        <div class="analysis-container" id="analysisContainer">
-            <div style="margin-bottom: 10px; font-weight: bold; color: var(--accent-warning-color); font-size: 11px;">
-                <i class="fas fa-robot"></i> AI Smart Update Summary
+        <div id="magicResultsScroll">
+            <!-- Success Message Screen -->
+            <div id="magicSuccessScreen" class="magic-success-screen">
+                <div class="success-icon-circle">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 style="color: var(--accent-success-color); margin-bottom: 10px;">बदलाव सफल रहा!</h3>
+                <p id="successMessageDetail" style="font-size: 14px; opacity: 0.8; margin-bottom: 25px;"></p>
+                <button class="btn-magic-pills" onclick="resetMagicPanel(true)" style="background: var(--accent-color); width: 160px;">
+                    <i class="fas fa-redo"></i> Scan Again
+                </button>
             </div>
-            <div id="analysisList" class="analysis-list">
-                <!-- Slim cards will be injected here -->
+
+            <div class="analysis-container" id="analysisContainer">
+                <div style="margin: 15px 0 10px 0; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-weight: 800; color: var(--accent-warning-color); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 20px; height: 1px; background: var(--accent-warning-color); opacity: 0.3;"></div>
+                        <i class="fas fa-robot"></i> Analysis Report
+                    </div>
+                    <button class="btn-icon" onclick="exportAnalysisJSON()" title="Export Analysis JSON" style="background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); color: var(--accent-warning-color); padding: 4px 8px; border-radius: 6px; font-size: 11px;">
+                        <i class="fas fa-file-export"></i> JSON
+                    </button>
+                </div>
+                <div id="analysisList" class="analysis-list">
+                    <!-- Cards will appear here -->
+                </div>
             </div>
+        </div>
+
+        <div class="magic-footer-actions" id="magicFooter" style="display: none;">
+             <button class="btn-magic-pills" id="btnTogglePreview" onclick="togglePreviewReport()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); flex: 1;">
+                 <i class="fas fa-eye"></i> Show Report
+             </button>
+             <button class="btn-magic-pills" id="btnApplyAll" onclick="applyAllAIChanges()" style="background: linear-gradient(135deg, #30d158, #28b049); flex: 2; box-shadow: 0 4px 20px rgba(48, 209, 88, 0.4);">
+                 <i class="fas fa-check-double"></i> Apply All Changes
+             </button>
         </div>
     </div>
 
@@ -1722,13 +1913,35 @@
                 extractedUpdates = [];
             }
         }
-        function resetMagicPanel() {
-            if(confirm("Bhai ji, क्या आप पेस्ट किया हुआ डेटा साफ़ करना चाहते हैं?")) {
+        async function resetMagicPanel(isScanAgain = false) {
+            // AJ: Using our Premium Custom Modal instead of old browser alert
+            const msg = isScanAgain ? "क्या आप नया डेटा स्कैन करने के लिए तैयार हैं?" : "Bhai ji, क्या आप पेस्ट किया हुआ डेटा साफ़ करके फिर से शुरुआत करना चाहते हैं?";
+            const confirmed = await showCustomConfirm(msg);
+
+            if (confirmed) {
+                // Clear Input
                 document.getElementById('aiRawInput').value = '';
+                localStorage.removeItem('ajMagicData');
+
+                // Clear UI Sections
+                document.getElementById('magicInputContainer').style.display = 'block';
+                document.getElementById('magicSummaryArea').style.display = 'none';
                 document.getElementById('analysisContainer').style.display = 'none';
-                document.getElementById('btnApplyAll').style.display = 'none';
-                document.getElementById('btnTogglePreview').style.display = 'none';
+                document.getElementById('magicSuccessScreen').style.display = 'none';
+                document.getElementById('magicFooter').style.display = 'none';
+
+                // Reset Button States and Names
+                const applyBtn = document.getElementById('btnApplyAll');
+                applyBtn.classList.remove('dummy');
+                applyBtn.innerHTML = `<i class="fas fa-check-double"></i> Apply All Changes`;
+
+                const viewBtn = document.getElementById('btnTogglePreview');
+                viewBtn.innerHTML = `<i class="fas fa-eye"></i> View Report`;
+
+                // Reset Logic Data
                 extractedUpdates = [];
+                
+                showToast("Magic Panel साफ़ हो गया! ✨");
             }
         }
         function togglePreviewReport() {
@@ -1747,6 +1960,7 @@
 
         // AJ Helper: कोड की फालतू खाली जगह (Indentation) साफ़ करने के लिए
         function cleanIndentation(str) {
+            if(!str) return "";
             const lines = str.split('\n');
             const minIndent = lines.filter(l => l.trim()).reduce((acc, line) => {
                 const indent = line.match(/^\s*/)[0].length;
@@ -1757,7 +1971,6 @@
 
         function scanAIUpdate() {
             const rawText = document.getElementById('aiRawInput').value;
-            const analysisBody = document.getElementById('analysisBody');
             const analysisContainer = document.getElementById('analysisContainer');
             const btnApplyAll = document.getElementById('btnApplyAll');
             const currentCode = aceEditor.getValue();
@@ -1771,45 +1984,98 @@
             analysisList.innerHTML = '';
             extractedUpdates = [];
 
-            // AJ Ultra Specific Regex: अब ये सिर्फ़ html, js, और css ब्लॉक्स को ही पहचानेगा
             const searchRegex = /Search वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css)?\n([\s\S]*?)\n```[\s\S]{0,400}?Replace वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css)?\n([\s\S]*?)\n```/g;
             
             let match;
             let count = 0;
-            let totalMatchesFound = 0;
+            let totalBlocksWithMatches = 0;
 
             while ((match = searchRegex.exec(rawText)) !== null) {
                 count++;
-                // AJ: De-indentation और Clean logic
                 let sCodeRaw = match[1].replace(/\r/g, "");
                 let rCodeRaw = match[2].replace(/\r/g, "");
                 
                 let sCode = sCodeRaw.trim();
                 let rCode = rCodeRaw.trim();
 
-                // रिपोर्ट में दिखाने के लिए सुंदर वर्ज़न (De-indented)
-                const displaySearch = cleanIndentation(sCodeRaw);
-                const displayReplace = cleanIndentation(rCodeRaw);
+                // फाइंड ऑल रेंजेस (Ace Editor Logic)
+                const ranges = [];
+                let searchIndex = 0;
+                while (true) {
+                    let foundIndex = currentCode.indexOf(sCode, searchIndex);
+                    if (foundIndex === -1) break;
+                    
+                    // कन्वर्ट इंडेक्स टू रो/कॉलम
+                    const linesBefore = currentCode.substring(0, foundIndex).split('\n');
+                    const startRow = linesBefore.length - 1;
+                    const startCol = linesBefore[startRow].length;
+                    
+                    const codeLines = sCode.split('\n');
+                    const endRow = startRow + codeLines.length - 1;
+                    const endCol = (codeLines.length > 1) ? codeLines[codeLines.length-1].length : startCol + sCode.length;
 
-                const isFound = currentCode.includes(sCode);
-                if(isFound) totalMatchesFound++;
+                    const Range = ace.require('ace/range').Range;
+                    ranges.push(new Range(startRow, startCol, endRow, endCol));
+                    searchIndex = foundIndex + sCode.length;
+                }
 
-                extractedUpdates.push({ search: sCode, replace: rCode, matched: isFound });
+                const matchCount = ranges.length;
+                if(matchCount > 0) totalBlocksWithMatches++;
 
-                // AJ Slim Card creation
+                const statusClass = matchCount === 0 ? 'missing' : (matchCount > 1 ? 'conflict' : 'matched');
+                const statusText = matchCount === 0 ? 'MISSING' : (matchCount > 1 ? `${matchCount} MATCHES` : 'READY');
+
+                extractedUpdates.push({ 
+                    search: sCode, 
+                    replace: rCode, 
+                    ranges: ranges, 
+                    currentIdx: 0,
+                    id: count - 1
+                });
+
                 const card = document.createElement('div');
-                card.className = `update-card ${isFound ? 'matched' : 'missing'}`;
+                card.className = `update-card ${statusClass}`;
+                card.id = `card-${count-1}`;
+                // AJ: Staggered animation delay based on index
+                card.style.animationDelay = `${(count - 1) * 0.08}s`;
+                
+                // AJ: पहली मैच वाली लाइन नंबर निकालना
+                const firstLine = ranges.length > 0 ? (ranges[0].start.row + 1) : 0;
+
                 card.innerHTML = `
                     <div class="card-header">
                         <span class="block-num">Block ${count}</span>
-                        <span class="status-mini" style="color:${isFound ? 'var(--accent-success-color)' : 'var(--accent-danger-color)'}">
-                            ${isFound ? '<i class="fas fa-check-circle"></i> MATCHED' : '<i class="fas fa-times-circle"></i> MISSING'}
-                        </span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button class="btn-copy-card" onclick="copyBlockToClipboard(${count-1})" title="Copy Search Code">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <span class="status-mini" style="color:${matchCount === 0 ? 'var(--accent-danger-color)' : (matchCount > 1 ? 'var(--accent-warning-color)' : 'var(--accent-success-color)')}">
+                                <i class="fas ${matchCount === 0 ? 'fa-times-circle' : (matchCount > 1 ? 'fa-exclamation-triangle' : 'fa-check-circle')}"></i> ${statusText}
+                            </span>
+                        </div>
                     </div>
-                    <div class="code-label" style="color:#ff9f0a;">🔍 SEARCH FOR:</div>
-                    <div class="code-box-mini" style="margin-bottom:6px; color: #ff9f0a; border-color: rgba(255,159,10,0.2);">${escapeHtml(displaySearch)}</div>
-                    <div class="code-label" style="color:#30d158;">✨ REPLACE WITH:</div>
-                    <div class="code-box-mini" style="color: #30d158; border-color: rgba(48,209,88,0.2);">${escapeHtml(displayReplace)}</div>
+                    <div class="code-label" style="color:#ff9f0a; font-size:8px; margin-bottom:2px;">🔍 SEARCH FOR:</div>
+                    <div class="code-box-mini" style="margin-bottom:8px; border-color:rgba(255,159,10,0.2);">${escapeHtml(cleanIndentation(sCodeRaw))}</div>
+                    
+                    <div class="code-label" style="color:#30d158; font-size:8px; margin-bottom:2px;">✨ REPLACE WITH:</div>
+                    <div class="code-box-mini" style="border-color:rgba(48,209,88,0.2);">${escapeHtml(cleanIndentation(rCodeRaw))}</div>
+                    ${matchCount > 0 ? `
+                        <div class="card-nav-controls">
+                            ${matchCount > 1 ? `
+                                <button class="nav-btn-sm" onclick="navBlockMatch(${count-1}, -1)"><i class="fas fa-arrow-left"></i></button>
+                                <div style="display:flex; flex-direction:column; align-items:center; min-width:70px; gap:2px;">
+                                    <span style="font-size:11px; font-weight:800;" id="nav-info-${count-1}">1 / ${matchCount}</span>
+                                    <span style="font-size:9px; font-weight:bold; color:var(--accent-color);" id="nav-line-${count-1}">LINE: ${firstLine}</span>
+                                </div>
+                                <button class="nav-btn-sm" onclick="navBlockMatch(${count-1}, 1)"><i class="fas fa-arrow-right"></i></button>
+                            ` : `
+                                <div style="flex:1; font-size:9px; font-weight:bold; opacity:0.6;">LINE: ${firstLine}</div>
+                            `}
+                            <button class="apply-btn-sm" onclick="applySingleBlock(${count-1}, ${matchCount > 1})">
+                                <i class="fas fa-magic"></i> ${matchCount > 1 ? 'Apply Selected' : 'Apply Now'}
+                            </button>
+                        </div>
+                    ` : ''}
                 `;
                 analysisList.appendChild(card);
             }
@@ -1817,59 +2083,262 @@
             if (count === 0) {
                 showToast("कोई Search/Replace ब्लॉक नहीं मिला!");
                 analysisContainer.style.display = 'none';
-                document.getElementById('btnTogglePreview').style.display = 'none';
+                document.getElementById('magicFooter').style.display = 'none';
             } else {
-                // AJ: Scan के बाद अब सीधे रिपोर्ट नहीं, सिर्फ बटन दिखेगा
+                // UI Magic: Collapse input after scan
+                document.getElementById('aiRawInput').classList.add('collapsed');
+                
                 analysisContainer.style.display = 'none'; 
-                document.getElementById('btnTogglePreview').style.display = 'inline-block';
-                document.getElementById('btnTogglePreview').innerHTML = `<i class="fas fa-eye"></i> View Report (${count})`;
-                showToast(`${count} ब्लॉक्स मिले, ${totalMatchesFound} मैच हुए!`);
-                if (totalMatchesFound > 0) {
-                    btnApplyAll.style.display = 'inline-block';
+                document.getElementById('magicFooter').style.display = 'flex';
+                document.getElementById('btnTogglePreview').innerHTML = `<i class="fas fa-eye"></i> Show Report (${count})`;
+                
+                showToast(`${count} ब्लॉक्स मिले, ${totalBlocksWithMatches} में मैच मिला!`);
+                // AJ: Update Summary Bar and Pills
+                const summaryArea = document.getElementById('magicSummaryArea');
+                const pillContainer = document.getElementById('pillContainer');
+                const statsDiv = document.getElementById('summaryStats');
+                
+                summaryArea.style.display = 'flex';
+                statsDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${count} Blocks Found, ${totalBlocksWithMatches} Match मिले!`;
+                pillContainer.innerHTML = '';
+
+                extractedUpdates.forEach((upd, idx) => {
+                    const isMatched = upd.ranges.length > 0;
+                    const pill = document.createElement('div');
+                    pill.className = `block-pill ${isMatched ? 'matched' : 'missing'}`;
+                    pill.innerHTML = `<i class="fas ${isMatched ? 'fa-check' : 'fa-times'}"></i> Block ${idx + 1}`;
+                    pill.onclick = () => scrollToBlock(idx);
+                    pillContainer.appendChild(pill);
+                });
+
+                if (totalBlocksWithMatches > 0) {
+                    document.getElementById('btnApplyAll').style.display = 'flex';
+                    // AJ: Ensure button is not dummy on fresh scan
+                    document.getElementById('btnApplyAll').classList.remove('dummy');
+                    document.getElementById('btnApplyAll').innerHTML = `<i class="fas fa-check-double"></i> Apply All Changes`;
+                } else {
+                    document.getElementById('btnApplyAll').style.display = 'none';
                 }
+
+                // AJ: Ensure View Button is reset on fresh scan
+                document.getElementById('btnTogglePreview').innerHTML = `<i class="fas fa-eye"></i> View Report (${count})`;
             }
         }
 
+        // AJ: Enhanced Helper Functions for v1.22
+        function scrollToBlock(idx) {
+            const container = document.getElementById('analysisContainer');
+            const scrollArea = document.getElementById('magicResultsScroll');
+            
+            // अगर रिपोर्ट छिपी है, तो उसे पहले दिखाओ
+            if (container.style.display === 'none' || container.style.display === '') {
+                togglePreviewReport(); 
+            }
+
+            setTimeout(() => {
+                const card = document.getElementById(`card-${idx}`);
+                if (card && scrollArea) {
+                    const targetPos = card.offsetTop - 20;
+                    scrollArea.scrollTo({ top: targetPos, behavior: 'smooth' });
+                    
+                    // Card Flash Effect
+                    card.style.transition = "0.3s";
+                    card.style.boxShadow = "0 0 20px var(--accent-color)";
+                    card.style.borderColor = "var(--accent-color)";
+                    setTimeout(() => {
+                        card.style.boxShadow = "";
+                        card.style.borderColor = "";
+                    }, 1500);
+                }
+            }, 100);
+        }
+
+        function copyBlockToClipboard(idx) {
+            // AJ: Now copying the SEARCH code as requested
+            const code = extractedUpdates[idx].search;
+            
+            // AJ: Robust Fallback Copy Mechanism
+            const showSuccess = () => showToast(`Block ${idx + 1} का कोड कॉपी हो गया! 📋`);
+
+            if (!navigator.clipboard) {
+                const textArea = document.createElement("textarea");
+                textArea.value = code;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSuccess();
+                } catch (err) {
+                    showToast('कॉपी नहीं हो पाया!');
+                }
+                document.body.removeChild(textArea);
+                return;
+            }
+
+            navigator.clipboard.writeText(code).then(
+                () => showSuccess(), 
+                () => {
+                    // अगर modern API फेल हो जाए तो फिर से fallback ट्राई करें
+                    const textArea = document.createElement("textarea");
+                    textArea.value = code;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showSuccess();
+                }
+            );
+        }
+
+        // AJ: Exports only the scanned blocks data for debugging
+        function exportAnalysisJSON() {
+            if (extractedUpdates.length === 0) {
+                showToast("पहले स्कैन करें!");
+                return;
+            }
+            
+            // डेटा को क्लीन करना ताकि सिर्फ काम की जानकारी मिले
+            const exportData = extractedUpdates.map((block, idx) => ({
+                id: idx + 1,
+                status: block.ranges.length > 0 ? "READY" : "MISSING",
+                matchesFound: block.ranges.length,
+                searchCode: block.search,
+                replaceCode: block.replace
+            }));
+
+            const blob = new Blob([JSON.stringify(exportData, null, 4)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Analysis_Report_${new Date().getTime()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(a.href);
+            showToast("एनालिसिस रिपोर्ट JSON में सेव हो गई! 📁");
+        }
+
+        function navBlockMatch(blockIdx, dir) {
+            const update = extractedUpdates[blockIdx];
+            update.currentIdx = (update.currentIdx + dir + update.ranges.length) % update.ranges.length;
+            
+            const range = update.ranges[update.currentIdx];
+            const lineNum = range.start.row + 1;
+
+            // अपडेट UI (Line number update added)
+            document.getElementById(`nav-info-${blockIdx}`).textContent = `${update.currentIdx + 1} / ${update.ranges.length}`;
+            document.getElementById(`nav-line-${blockIdx}`).textContent = `LINE: ${lineNum}`;
+            
+            // एडिटर में फोकस
+            aceEditor.selection.setRange(range);
+            aceEditor.scrollToLine(range.start.row, true, true, function() {});
+            
+            // ग्लो इफेक्ट और लाइन हाइलाइट (Surgical Context)
+            const Range = ace.require('ace/range').Range;
+            const lineRange = new Range(range.start.row, 0, range.start.row, 1);
+            
+            const lineMarkerId = aceEditor.session.addMarker(lineRange, "context-line-highlight", "fullLine");
+            const glowMarkerId = aceEditor.session.addMarker(range, "current-match-glow", "text");
+            
+            setTimeout(() => {
+                aceEditor.session.removeMarker(lineMarkerId);
+                aceEditor.session.removeMarker(glowMarkerId);
+            }, 2000);
+        }
+
+        async function applySingleBlock(blockIdx, isSelectedOnly) {
+            const update = extractedUpdates[blockIdx];
+            const Range = ace.require('ace/range').Range;
+            const card = document.getElementById(`card-${blockIdx}`);
+            
+            // Visual feedback: Card starts fading
+            if(card) {
+                card.style.opacity = "0.5";
+                card.style.pointerEvents = "none";
+            }
+
+            if (isSelectedOnly) {
+                const range = update.ranges[update.currentIdx];
+                // AJ Fix: Direct session replace for surgical precision
+                aceEditor.session.replace(range, update.replace);
+                
+                const lines = update.replace.split('\n');
+                const endRow = range.start.row + lines.length - 1;
+                const endCol = (lines.length > 1) ? lines[lines.length - 1].length : range.start.column + update.replace.length;
+                const markRange = new Range(range.start.row, range.start.column, endRow, endCol);
+                aceEditor.session.addMarker(markRange, "green-marker", "text");
+                
+                updateChangeCounter(1);
+            } else {
+                let count = 0;
+                // AJ Fix: Bottom-to-top replacement to keep ranges valid
+                const sortedRanges = [...update.ranges].sort((a, b) => b.start.row - a.start.row || b.start.column - a.start.column);
+                sortedRanges.forEach(r => {
+                    aceEditor.session.replace(r, update.replace);
+                    count++;
+                });
+                updateChangeCounter(count);
+            }
+            
+            showToast("बदलाव लागू किया गया! ✨");
+            saveCodeToLocalStorage();
+
+            // AJ: रिफ्रेश स्कैन अब और भी स्मूथ होगा
+            setTimeout(() => {
+                const currentScroll = document.getElementById('magicResultsScroll').scrollTop;
+                scanAIUpdate();
+                // रिस्कैन के बाद स्क्रॉल पोजीशन वापस सेट करना ताकि झटका न लगे
+                setTimeout(() => {
+                    document.getElementById('magicResultsScroll').scrollTop = currentScroll;
+                }, 50);
+            }, 300);
+        }
+
         async function applyAllAIChanges() {
-            const confirmed = await showCustomConfirm(`क्या आप सभी ${extractedUpdates.filter(u => u.matched).length} मैचिंग बदलाव एक साथ करना चाहते हैं?`);
+            const readyBlocks = extractedUpdates.filter(u => u.ranges.length > 0);
+            if(readyBlocks.length === 0) {
+                showToast("बदलने के लिए कुछ नहीं बचा है!");
+                return;
+            }
+
+            const confirmed = await showCustomConfirm(`क्या आप बचे हुए ${readyBlocks.length} ब्लॉक्स के सभी बदलाव एक साथ करना चाहते हैं?`);
             if (!confirmed) return;
 
-            const Range = ace.require('ace/range').Range;
-            let successCount = 0;
-            clearAllMarks(); // पुराने हाइलाइट्स साफ़ करें
-
-            // AJ: हर अपडेट को बारी-बारी से प्रोसेस करना ताकि मार्क किया जा सके
-            extractedUpdates.forEach(update => {
-                if (update.matched) {
-                    // एडिटर में टेक्स्ट ढूँढना
-                    aceEditor.find(update.search, { regExp: false, wrap: true });
-                    let foundRange = aceEditor.getSelectionRange();
-
-                    if (!foundRange.isEmpty()) {
-                        const startRow = foundRange.start.row;
-                        const startCol = foundRange.start.column;
-
-                        // टेक्स्ट बदलना
-                        aceEditor.replace(update.replace);
-                        successCount++;
-
-                        // नए बदले हुए कोड की जगह को मार्क करना
-                        const endPos = aceEditor.getCursorPosition();
-                        const newMarkRange = new Range(startRow, startCol, endPos.row, endPos.column);
-                        const markerId = aceEditor.session.addMarker(newMarkRange, "green-marker", "text");
-                        currentMarkers.push(markerId);
-                    }
-                }
+            let totalIncr = 0;
+            // AJ Fix: Collect all matches and sort them from bottom to top of the file
+            let allMatches = [];
+            extractedUpdates.forEach(upd => {
+                upd.ranges.forEach(r => allMatches.push({ range: r, text: upd.replace }));
             });
+            allMatches.sort((a, b) => b.range.start.row - a.range.start.row || b.range.start.column - a.range.start.column);
 
-            if (successCount > 0) {
-                updateChangeCounter(successCount);
-                showToast(`${successCount} बदलाव लागू और हाइलाइट किए गए! ✨`);
-                closeMagicPanel();
-                saveCodeToLocalStorage(); // मेमोरी में तुरंत सेव
-            } else {
-                showToast("बदलने के लिए कुछ नहीं मिला!");
-            }
+            allMatches.forEach(match => {
+                aceEditor.session.replace(match.range, match.text);
+                totalIncr++;
+            });
+            
+            updateChangeCounter(totalIncr);
+            saveCodeToLocalStorage();
+            
+            // AJ: Transition to Success View instead of closing
+            document.getElementById('magicInputContainer').style.display = 'none';
+            document.getElementById('analysisContainer').style.display = 'none';
+            document.getElementById('magicSuccessScreen').style.display = 'flex';
+            
+            // Dummy Button Logic
+            const applyBtn = document.getElementById('btnApplyAll');
+            applyBtn.classList.add('dummy');
+            applyBtn.innerHTML = `<i class="fas fa-check"></i> Applied All`;
+
+            // AJ: Rename View Report to View Previous Reports
+            const viewBtn = document.getElementById('btnTogglePreview');
+            viewBtn.innerHTML = `<i class="fas fa-history"></i> View Previous Reports`;
+            
+            document.getElementById('successMessageDetail').textContent = `शानदार! आपके सभी ${totalIncr} ब्लॉक्स सफलतापूर्वक बदल दिए गए हैं।`;
+            showToast("सभी बदलाव लागू कर दिए गए! ✨");
         }
 
         function escapeHtml(text) {
