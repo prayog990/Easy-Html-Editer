@@ -1330,9 +1330,14 @@
     async function clearEditor() {
         const confirmed = await showCustomConfirm('क्या आप वाकई एडिटर को पूरी तरह साफ करना चाहते हैं?');
         if (confirmed) { 
-            loadInitialCode('');
+            // AJ Fix: Hard clear for Ace Editor
+            aceEditor.setValue("", -1); 
+            aceEditor.session.getUndoManager().reset();
             resetChangeCounter();
+            saveCodeToLocalStorage();
+            updatePreview();
             document.getElementById('fileNameSP').textContent = 'फाइल: index.html';
+            showToast("एडिटर साफ़ कर दिया गया! 🗑️");
         }
     }
 
@@ -1923,10 +1928,13 @@
                 document.getElementById('aiRawInput').value = '';
                 localStorage.removeItem('ajMagicData');
 
-                // Clear UI Sections
+                // AJ Fix v1.29: Restore UI States
                 document.getElementById('magicInputContainer').style.display = 'block';
+                document.getElementById('magicInputContainer').style.opacity = '1';
+                document.getElementById('magicInputContainer').style.pointerEvents = 'auto';
                 document.getElementById('magicSummaryArea').style.display = 'none';
                 document.getElementById('analysisContainer').style.display = 'none';
+                document.getElementById('analysisContainer').style.opacity = '1';
                 document.getElementById('magicSuccessScreen').style.display = 'none';
                 document.getElementById('magicFooter').style.display = 'none';
 
@@ -1984,7 +1992,7 @@
             analysisList.innerHTML = '';
             extractedUpdates = [];
 
-            const searchRegex = /Search वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css)?\n([\s\S]*?)\n```[\s\S]{0,400}?Replace वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css)?\n([\s\S]*?)\n```/g;
+            const searchRegex = /Search वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css|python|py)?\n([\s\S]*?)\n```[\s\S]{0,400}?Replace वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css|python|py)?\n([\s\S]*?)\n```/g;
             
             let match;
             let count = 0;
@@ -2316,17 +2324,47 @@
             allMatches.sort((a, b) => b.range.start.row - a.range.start.row || b.range.start.column - a.range.start.column);
 
             allMatches.forEach(match => {
+                const startRow = match.range.start.row;
+                const startCol = match.range.start.column;
+
+                // AJ: Perform the replacement
                 aceEditor.session.replace(match.range, match.text);
                 totalIncr++;
+
+                // AJ: Calculate new range for highlighting
+                const lines = match.text.split('\n');
+                const endRow = startRow + lines.length - 1;
+                const endCol = (lines.length > 1) ? lines[lines.length - 1].length : startCol + match.text.length;
+                
+                const Range = ace.require('ace/range').Range;
+                const newMarkRange = new Range(startRow, startCol, endRow, endCol);
+                
+                // AJ: Add persistent Green Highlight so you can see changes in editor
+                const markerId = aceEditor.session.addMarker(newMarkRange, "green-marker", "text");
+                currentMarkers.push(markerId);
             });
             
             updateChangeCounter(totalIncr);
             saveCodeToLocalStorage();
             
-            // AJ: Transition to Success View instead of closing
-            document.getElementById('magicInputContainer').style.display = 'none';
-            document.getElementById('analysisContainer').style.display = 'none';
-            document.getElementById('magicSuccessScreen').style.display = 'flex';
+            // AJ Fix v1.29: No more "Link Break". Keeping context visible.
+            document.getElementById('magicInputContainer').style.opacity = '0.3';
+            document.getElementById('magicInputContainer').style.pointerEvents = 'none';
+            document.getElementById('analysisContainer').style.opacity = '0.3';
+            
+            // Positioning Success Screen as an Overlay
+            const successScreen = document.getElementById('magicSuccessScreen');
+            successScreen.style.display = 'flex';
+            successScreen.style.position = 'absolute';
+            successScreen.style.top = '50%';
+            successScreen.style.left = '50%';
+            successScreen.style.transform = 'translate(-50%, -50%)';
+            successScreen.style.zIndex = '1000';
+            successScreen.style.background = 'rgba(20,20,20,0.9)';
+            successScreen.style.padding = '30px';
+            successScreen.style.borderRadius = '20px';
+            successScreen.style.border = '1px solid var(--accent-success-color)';
+            successScreen.style.boxShadow = '0 0 50px rgba(0,0,0,0.8)';
             
             // Dummy Button Logic
             const applyBtn = document.getElementById('btnApplyAll');
