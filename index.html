@@ -65,21 +65,11 @@
             scrollbar-color: rgba(150, 150, 150, 0.2) transparent;
         }
 
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* बाहर वाली स्क्रॉलिंग बंद */
-        }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-color); color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh; /* स्क्रीन की पूरी ऊंचाई */
-            width: 100vw;
-            position: fixed; /* ब्राउज़र के एड्रेस बार वाले स्क्रॉल से बचने के लिए */
+            overflow: hidden; display: flex; flex-direction: column; height: 100dvh;
+            scrollbar-gutter: stable;
         }
 
         
@@ -122,7 +112,7 @@
         .btn {
             background: linear-gradient(145deg, var(--accent-color), var(--accent-hover-color)); 
             border: 1px solid rgba(255,255,255,0.1); 
-            color: white; padding: 10px 16px; border-radius: 8px;
+            color: white; padding: 7px 16px; border-radius: 8px;
             cursor: pointer; font-size: 13px; 
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
             white-space: nowrap; display: inline-flex;
@@ -147,28 +137,13 @@
         .btn-success { background: var(--accent-success-color); }
         .btn-warning { background: var(--accent-warning-color); }
 
-        /* --- Toolbar (Mobile Optimized) --- */
+        /* --- Toolbar --- */
         .toolbar {
             background: var(--surface-color); 
             border-bottom: 1px solid var(--border-color); 
             padding: 8px 15px;
-            display: flex; gap: 8px; 
-            flex-wrap: nowrap; /* मोबाइल पर लाइन न टूटे */
-            overflow-x: auto; /* अगर बटन ज्यादा हों तो साइड में स्क्रॉल हो */
+            display: flex; gap: 10px; flex-wrap: wrap;
             box-shadow: inset 0px -5px 15px rgba(0,0,0,0.2);
-            flex-shrink: 0; /* ये अपनी जगह नहीं छोड़ेगा */
-        }
-        
-        @media (max-width: 768px) {
-            .toolbar { 
-                flex-direction: column; 
-                flex-wrap: wrap; 
-                overflow-x: hidden;
-                padding: 10px;
-            }
-            .input-container textarea {
-                height: 45px !important; /* मोबाइल पर सर्च बॉक्स थोड़ा छोटा ताकि एडिटर को जगह मिले */
-            }
         }
         .input-container { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 4px; }
         .input-container label { font-size: 11px; color: var(--accent-color); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
@@ -206,22 +181,17 @@
         .btn-clear:hover { color: var(--text-color); }
 
         /* --- Editor & Preview Layout --- */
-        .main-container { 
-            display: flex; 
-            flex: 1; /* बची हुई सारी जगह ये लेगा */
-            overflow: hidden; 
-            position: relative;
-        }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
         .editor-section, .preview-section { display: flex; flex-direction: column; width: 50%; height: 100%; }
         .section-header {
-            background: #333; padding: 8px 15px; font-size: 13px; font-weight: 500;
+            background: #333; padding: 0 15px; height: 30px; font-size: 13px; font-weight: 500;
             border-bottom: 1px solid var(--border-color); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
         }
         body.light-theme .section-header { background: #f0f0f0; }
         
         .btn-icon {
             background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-muted-color);
-            padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex; align-items: center; justify-content: center;
         }
         .btn-icon:hover { 
@@ -301,41 +271,41 @@
         .find-nav-container { 
             display: none; 
             align-items: center; 
-            gap: 12px; /* बटन्स और बैज के बीच सुंदर गैप */
+            gap: 6px; 
             background: transparent;
             padding: 0;
             border: none;
             animation: searchPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            margin-left: 10px;
+            margin-left: 5px;
         }
 
         #matchCounter {
-            font-size: 12px; /* पढ़ने में आसान */
+            font-size: 11px;
             font-weight: 700;
             color: white !important;
             background: var(--accent-color);
-            padding: 0 15px; /* प्रीमियम फील के लिए साइड स्पेस */
-            border-radius: 6px; /* बटन्स के कोनों के साथ परफेक्ट मैच */
-            letter-spacing: 0.8px;
+            padding: 0 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
             white-space: nowrap;
-            display: flex; /* वर्टिकल सेंटर के लिए */
+            display: flex;
             align-items: center;
-            height: 34px; /* बटन्स की हाइट के एकदम बराबर */
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            height: 24px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             transition: all 0.3s ease;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
         .btn-nav {
             background: transparent; 
-            border: 1.5px solid var(--accent-color); 
+            border: 1.2px solid var(--accent-color); 
             color: var(--accent-color);
-            width: 34px; height: 34px;
+            width: 24px; height: 24px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 6px; /* वापस चोकोर (Square) */
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s ease;
             outline: none;
+            font-size: 10px;
         }
 
         /* AJ Fix: Sticky Toggle State */
@@ -369,12 +339,12 @@
         .side-panel-header h3 { font-size: 18px; font-weight: 700; color: var(--accent-color); letter-spacing: 0.5px; }
         .side-panel .btn-close { background: rgba(255,255,255,0.05); border: none; color: var(--text-color); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
         .side-panel .btn-close:hover { background: var(--accent-danger-color); color: white; transform: rotate(90deg); }
-        .side-panel-content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .side-panel-content { height: calc(100dvh - 90px); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 50px; }
         .side-panel .btn { 
-            width: 100%; justify-content: flex-start; padding: 12px 15px; 
+            width: 100%; justify-content: flex-start; padding: 8px 12px; 
             background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); 
-            color: var(--text-color); /* टेक्स्ट का रंग थीम के हिसाब से बदलेगा */
-            border-radius: 12px; font-weight: 500;
+            color: var(--text-color); 
+            border-radius: 8px; font-weight: 500; font-size: 13px;
         }
         /* Light Mode में बटनों को गहरा (Darker) करना */
         body.light-theme .side-panel .btn {
@@ -390,6 +360,13 @@
         .side-panel .btn i.fa-download { color: #32ade6; }
         .side-panel .btn i.fa-external-link-alt { color: #af52de; }
         .side-panel .btn i.fa-trash { color: #ff453a; }
+        
+        .side-panel #fileNameSP {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: var(--surface-color); border-top: 1px solid var(--border-color);
+            padding: 8px; font-size: 11px; text-align: center; color: var(--accent-color);
+            z-index: 2001; font-weight: bold;
+        }
 
         /* --- Universal Footer Toolbar --- */
         .footer-toolbar {
@@ -397,14 +374,14 @@
             background: rgba(25, 25, 25, 0.85); 
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-top: 1px solid rgba(255,255,255,0.1); 
-            height: 65px; flex-shrink: 0; padding: 0 12px; gap: 10px;
+            height: 40px; flex-shrink: 0; padding: 0 12px; gap: 10px;
             box-shadow: 0 -8px 25px rgba(0,0,0,0.5);
             z-index: 1000;
         }
         .footer-toolbar .btn { 
-            flex: 1; padding: 12px 5px; font-size: 13px; 
+            flex: 1; padding: 6px 2px; font-size: 11px; 
             background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px; color: var(--text-muted-color);
+            border-radius: 8px; color: var(--text-muted-color);
         }
         .footer-toolbar .btn:first-child {
             background: linear-gradient(135deg, var(--accent-color), var(--accent-hover-color));
@@ -471,9 +448,9 @@
 
         /* --- Theme Chooser --- */
         .theme-chooser { 
-            margin-top: 15px; padding: 15px; 
+            margin-top: 8px; padding: 10px; 
             background: rgba(0,0,0,0.2); 
-            border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);
         }
         /* Light Mode में बॉक्स का रंग ठीक करना */
         body.light-theme .theme-chooser {
@@ -481,9 +458,10 @@
             border-color: rgba(0,0,0,0.1);
         }
 
-        .theme-chooser h4 { font-size: 11px; color: var(--text-muted-color); margin-bottom: 12px; text-align: center; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; opacity: 0.7; }
+        .theme-chooser-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .theme-chooser h4 { font-size: 10px; color: var(--text-muted-color); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; opacity: 0.8; }
         
-        .light-dark-toggle { display: flex; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 4px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
+        .light-dark-toggle { display: flex; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 2px; border: 1px solid rgba(255,255,255,0.05); min-width: 80px; }
         
         /* Light Mode में टॉगल का रंग ठीक करना */
         body.light-theme .light-dark-toggle {
@@ -491,22 +469,21 @@
             border-color: rgba(0,0,0,0.1);
         }
         .light-dark-toggle button {
-            flex: 1; background: transparent; border: none; color: var(--text-muted-color); padding: 10px; cursor: pointer; border-radius: 10px; transition: 0.3s;
+            flex: 1; background: transparent; border: none; color: var(--text-muted-color); padding: 4px; cursor: pointer; border-radius: 4px; transition: 0.3s; font-size: 12px;
         }
-        .light-dark-toggle button.active { background: var(--accent-color); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .light-dark-toggle button.active { background: var(--accent-color); color: white; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
         .accent-colors { 
             display: flex; 
-            gap: 12px; 
+            gap: 6px; 
             overflow-x: auto; 
-            padding: 5px 5px 15px 5px; 
+            padding: 5px 0; 
             scrollbar-width: none; 
             -ms-overflow-style: none;
-            scroll-snap-type: x mandatory;
         }
         .accent-colors::-webkit-scrollbar { display: none; }
         .color-swatch {
             flex-shrink: 0;
-            width: 34px; height: 34px; border-radius: 10px; cursor: pointer; 
+            width: 24px; height: 24px; border-radius: 6px; cursor: pointer; 
             border: 2px solid rgba(255,255,255,0.1);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             scroll-snap-align: start;
@@ -632,7 +609,7 @@
             
             .tab-bar {
                 display: flex; justify-content: space-around; background: var(--surface-color);
-                border-bottom: 1px solid var(--border-color); height: 45px; flex-shrink: 0;
+                border-bottom: 1px solid var(--border-color); height: 40px; flex-shrink: 0;
             }
             .tab-button {
                 flex: 1; background: transparent; border: none; color: var(--text-muted-color); padding: 10px 0;
@@ -683,7 +660,7 @@
         <div class="input-container">
             <label for="findBlock" style="display: flex; justify-content: space-between; align-items: center;">
                 <span><i class="fas fa-search"></i> इस कोड को खोजें:</span> 
-                <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 13px;"></span>
+                <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; display: inline-block; text-align: right;"></span>
             </label>
             <div class="textarea-wrapper">
                 <textarea id="findBlock" placeholder="यहाँ पुराना कोड पेस्ट करें..."></textarea>
@@ -744,20 +721,7 @@
                     </button>
                 </div>
             </div>
-            <div class="quick-symbol-bar" id="quickSymbolBar">
-                <button class="symbol-btn" onclick="insertSymbol('<')">&lt;</button>
-                <button class="symbol-btn" onclick="insertSymbol('>')">&gt;</button>
-                <button class="symbol-btn" onclick="insertSymbol('/')">/</button>
-                <button class="symbol-btn" onclick="insertSymbol('=')">=</button>
-                <button class="symbol-btn" onclick="insertSymbol('&quot;')">"</button>
-                <button class="symbol-btn" onclick="insertSymbol('\'')">'</button>
-                <button class="symbol-btn" onclick="insertSymbol('!')">!</button>
-                <button class="symbol-btn" onclick="insertSymbol('{')">{</button>
-                <button class="symbol-btn" onclick="insertSymbol('}')">}</button>
-                <button class="symbol-btn" onclick="insertSymbol('(')">(</button>
-                <button class="symbol-btn" onclick="insertSymbol(')')">)</button>
-                <button class="symbol-btn" onclick="insertSymbol(';')">;</button>
-            </div>
+            <!-- Symbol Bar Removed to save space on mobile -->
             <div class="editor-container">
                 <div class="code-editor" id="codeEditor"><!DOCTYPE html>
 <html lang="hi">
@@ -808,8 +772,14 @@
             <button class="btn" onclick="openPreview()"> <i class="fas fa-external-link-alt"></i> नई विंडो में प्रिव्यू </button>
             
             <div class="theme-chooser">
-                 <h4>थीम बदलें</h4>
-                 <div class="light-dark-toggle">
+                 <div class="theme-chooser-header">
+                     <h4>थीम बदलें</h4>
+                     <div class="light-dark-toggle">
+                         <button id="darkToggleBtn" class="active" onclick="setLightDark('dark')"><i class="fas fa-moon"></i></button>
+                         <button id="lightToggleBtn" onclick="setLightDark('light')"><i class="fas fa-sun"></i></button>
+                     </div>
+                 </div>
+                 <div style="display:none"> <!-- Old toggle removed -->
                      <button id="darkToggleBtn" class="active" onclick="setLightDark('dark')"><i class="fas fa-moon"></i></button>
                      <button id="lightToggleBtn" onclick="setLightDark('light')"><i class="fas fa-sun"></i></button>
                  </div>
@@ -1762,6 +1732,19 @@
         @keyframes cardEntrance {
             to { opacity: 1; transform: translateY(0); }
         }
+        .magic-fade-out {
+            opacity: 0 !important;
+            transform: translate(-50%, -60%) scale(0.9) !important;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        /* AJ Premium Floating Overlay */
+        #magicSuccessScreen {
+            backdrop-filter: blur(20px) brightness(1.2);
+            -webkit-backdrop-filter: blur(20px) brightness(1.2);
+            border: 1.5px solid rgba(48, 209, 88, 0.4) !important;
+            box-shadow: 0 30px 100px rgba(0,0,0,0.9), 0 0 40px rgba(48, 209, 88, 0.1) !important;
+        }
         body.light-theme .update-card { background: rgba(0,0,0,0.04); border-color: #ccc; }
         
         /* Navigation Line Contrast Fix for Light Mode */
@@ -2008,6 +1991,17 @@
         }
 
         function scanAIUpdate() {
+            // AJ Fix: Reset UI state for new scan
+            const statusCard = document.getElementById('persistentStatusCard');
+            if(statusCard) statusCard.style.display = 'none';
+
+            const successScreen = document.getElementById('magicSuccessScreen');
+            successScreen.style.display = 'none';
+            successScreen.classList.remove('magic-fade-out');
+            document.getElementById('magicInputContainer').style.opacity = '1';
+            document.getElementById('magicInputContainer').style.pointerEvents = 'auto';
+            document.getElementById('analysisContainer').style.opacity = '1';
+
             const rawText = document.getElementById('aiRawInput').value;
             const analysisContainer = document.getElementById('analysisContainer');
             const btnApplyAll = document.getElementById('btnApplyAll');
@@ -2377,36 +2371,63 @@
             updateChangeCounter(totalIncr);
             saveCodeToLocalStorage();
             
-            // AJ Fix v1.29: No more "Link Break". Keeping context visible.
-            document.getElementById('magicInputContainer').style.opacity = '0.3';
-            document.getElementById('magicInputContainer').style.pointerEvents = 'none';
-            document.getElementById('analysisContainer').style.opacity = '0.3';
-            
-            // Positioning Success Screen as an Overlay
+            // AJ Fix v1.3: Success message with auto-reveal and persistent label
+            const analysisList = document.getElementById('analysisList');
+            const analysisContainer = document.getElementById('analysisContainer');
+            const inputContainer = document.getElementById('magicInputContainer');
             const successScreen = document.getElementById('magicSuccessScreen');
+
+            inputContainer.style.opacity = '0.3';
+            inputContainer.style.pointerEvents = 'none';
+            analysisContainer.style.opacity = '0.3';
+            
+            // Positioning Success Overlay
+            successScreen.classList.remove('magic-fade-out');
             successScreen.style.display = 'flex';
             successScreen.style.position = 'absolute';
-            successScreen.style.top = '50%';
-            successScreen.style.left = '50%';
+            successScreen.style.top = '50%'; successScreen.style.left = '50%';
             successScreen.style.transform = 'translate(-50%, -50%)';
-            successScreen.style.zIndex = '1000';
-            successScreen.style.background = 'rgba(20,20,20,0.9)';
-            successScreen.style.padding = '30px';
-            successScreen.style.borderRadius = '20px';
+            successScreen.style.zIndex = '2000';
+            successScreen.style.background = 'rgba(20,20,20,0.95)';
+            successScreen.style.padding = '30px'; successScreen.style.borderRadius = '20px';
             successScreen.style.border = '1px solid var(--accent-success-color)';
-            successScreen.style.boxShadow = '0 0 50px rgba(0,0,0,0.8)';
-            
-            // Dummy Button Logic
-            const applyBtn = document.getElementById('btnApplyAll');
-            applyBtn.classList.add('dummy');
-            applyBtn.innerHTML = `<i class="fas fa-check"></i> Applied All`;
-
-            // AJ: Rename View Report to View Previous Reports
-            const viewBtn = document.getElementById('btnTogglePreview');
-            viewBtn.innerHTML = `<i class="fas fa-history"></i> View Previous Reports`;
+            successScreen.style.boxShadow = '0 0 100px rgba(0,0,0,0.9)';
             
             document.getElementById('successMessageDetail').textContent = `शानदार! आपके सभी ${totalIncr} ब्लॉक्स सफलतापूर्वक बदल दिए गए हैं।`;
             showToast("सभी बदलाव लागू कर दिए गए! ✨");
+
+            // Auto-hide success screen after 3 seconds to reveal report
+            setTimeout(() => {
+                successScreen.classList.add('magic-fade-out');
+                setTimeout(() => { 
+                    successScreen.style.display = 'none';
+                    inputContainer.style.opacity = '1';
+                    inputContainer.style.pointerEvents = 'auto';
+                    analysisContainer.style.opacity = '1';
+                    analysisContainer.style.display = 'block'; 
+                }, 600);
+            }, 3000);
+
+            // AJ Fix v1.3.8: Status Card at the TOP, visible even if report hidden
+            let statusCard = document.getElementById('persistentStatusCard');
+            if (!statusCard) {
+                statusCard = document.createElement('div');
+                statusCard.id = 'persistentStatusCard';
+                statusCard.className = 'update-card matched';
+                statusCard.style.textAlign = 'center';
+                statusCard.style.marginBottom = '15px';
+                // Insert at the top of the scroll area, before the container
+                document.getElementById('magicResultsScroll').insertBefore(statusCard, analysisContainer);
+            }
+            statusCard.style.display = 'block';
+            statusCard.innerHTML = `<i class="fas fa-check-double" style="color:var(--accent-success-color); font-size:20px; margin-bottom:8px;"></i><p style="font-weight:bold; color:var(--accent-success-color); font-size:14px;">शानदार भाई जी! सभी बदलाव लागू हो चुके हैं।</p>`;
+            
+            // Disable further changes for current blocks
+            const applyBtn = document.getElementById('btnApplyAll');
+            applyBtn.classList.add('dummy');
+            applyBtn.innerHTML = `<i class="fas fa-check"></i> Applied All`;
+            const viewBtn = document.getElementById('btnTogglePreview');
+            viewBtn.innerHTML = `<i class="fas fa-history"></i> Changes Applied`;
         }
 
         function escapeHtml(text) {
