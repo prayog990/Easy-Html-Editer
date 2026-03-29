@@ -65,11 +65,21 @@
             scrollbar-color: rgba(150, 150, 150, 0.2) transparent;
         }
 
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* बाहर वाली स्क्रॉलिंग बंद */
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-color); color: var(--text-color);
-            overflow: hidden; display: flex; flex-direction: column; height: 100vh;
-            scrollbar-gutter: stable;
+            display: flex;
+            flex-direction: column;
+            height: 100vh; /* स्क्रीन की पूरी ऊंचाई */
+            width: 100vw;
+            position: fixed; /* ब्राउज़र के एड्रेस बार वाले स्क्रॉल से बचने के लिए */
         }
 
         
@@ -137,13 +147,28 @@
         .btn-success { background: var(--accent-success-color); }
         .btn-warning { background: var(--accent-warning-color); }
 
-        /* --- Toolbar --- */
+        /* --- Toolbar (Mobile Optimized) --- */
         .toolbar {
             background: var(--surface-color); 
             border-bottom: 1px solid var(--border-color); 
             padding: 8px 15px;
-            display: flex; gap: 10px; flex-wrap: wrap;
+            display: flex; gap: 8px; 
+            flex-wrap: nowrap; /* मोबाइल पर लाइन न टूटे */
+            overflow-x: auto; /* अगर बटन ज्यादा हों तो साइड में स्क्रॉल हो */
             box-shadow: inset 0px -5px 15px rgba(0,0,0,0.2);
+            flex-shrink: 0; /* ये अपनी जगह नहीं छोड़ेगा */
+        }
+        
+        @media (max-width: 768px) {
+            .toolbar { 
+                flex-direction: column; 
+                flex-wrap: wrap; 
+                overflow-x: hidden;
+                padding: 10px;
+            }
+            .input-container textarea {
+                height: 45px !important; /* मोबाइल पर सर्च बॉक्स थोड़ा छोटा ताकि एडिटर को जगह मिले */
+            }
         }
         .input-container { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 4px; }
         .input-container label { font-size: 11px; color: var(--accent-color); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
@@ -181,7 +206,12 @@
         .btn-clear:hover { color: var(--text-color); }
 
         /* --- Editor & Preview Layout --- */
-        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .main-container { 
+            display: flex; 
+            flex: 1; /* बची हुई सारी जगह ये लेगा */
+            overflow: hidden; 
+            position: relative;
+        }
         .editor-section, .preview-section { display: flex; flex-direction: column; width: 50%; height: 100%; }
         .section-header {
             background: #333; padding: 8px 15px; font-size: 13px; font-weight: 500;
