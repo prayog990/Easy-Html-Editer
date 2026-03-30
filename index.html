@@ -339,7 +339,7 @@
         .side-panel-header h3 { font-size: 18px; font-weight: 700; color: var(--accent-color); letter-spacing: 0.5px; }
         .side-panel .btn-close { background: rgba(255,255,255,0.05); border: none; color: var(--text-color); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
         .side-panel .btn-close:hover { background: var(--accent-danger-color); color: white; transform: rotate(90deg); }
-        .side-panel-content { height: calc(100dvh - 90px); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 50px; }
+        .side-panel-content { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .side-panel .btn { 
             width: 100%; justify-content: flex-start; padding: 8px 12px; 
             background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); 
@@ -362,10 +362,18 @@
         .side-panel .btn i.fa-trash { color: #ff453a; }
         
         .side-panel #fileNameSP {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: var(--surface-color); border-top: 1px solid var(--border-color);
-            padding: 8px; font-size: 11px; text-align: center; color: var(--accent-color);
-            z-index: 2001; font-weight: bold;
+            display: block;
+            margin-top: 10px;
+            padding: 6px;
+            font-size: 11px;
+            text-align: center;
+            color: var(--accent-color);
+            font-weight: 800;
+            background: rgba(0,0,0,0.1);
+            border-radius: 6px;
+            border: 1px dashed rgba(var(--accent-color-rgb), 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* --- Universal Footer Toolbar --- */
@@ -805,9 +813,8 @@
                      <div class="color-swatch" style="background: #e74c3c;" data-color="#e74c3c" data-hover="#b03a2e" onclick="setAccentColor(this)"></div>
                      <div class="color-swatch" style="background: #34495e;" data-color="#34495e" data-hover="#212f3d" onclick="setAccentColor(this)"></div>
                  </div>
+                 <span class="file-name" id="fileNameSP">फाइल: index.html</span>
             </div>
-
-            <span class="file-name" id="fileNameSP" style="font-size: 13px; color: var(--text-muted-color); text-align: center; margin-top: auto; padding-top:15px;">फाइल: index.html</span>
         </div>
     </div>
 
