@@ -1,2447 +1,874 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Easy Html Editer v1.0</title>
-    <!-- Ace Editor Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ace.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.15.2/ext-language_tools.min.js"></script>
-    <!-- JS-Beautify for Magic Wand (Formatting) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.7/beautify-html.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            /* Default Theme: Pro Blue Dark */
-            --bg-color: #121212;
-            --surface-color: #1e1e1e;
-            --header-color: #1a1a1a;
-            --border-color: #333333;
-            --text-color: #e0e0e0;
-            --text-muted-color: #a0a0a0;
-            --editor-bg: #1e1e1e;
-            --input-bg: #2a2a2a;
-            --input-border: #444444;
-            --accent-color: #007aff; /* Pro Blue */
-            --accent-hover-color: #005ecb;
-            --accent-success-color: #30d158;
-            --accent-danger-color: #ff453a;
-            --accent-warning-color: #ff9f0a;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Rail Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161920;
+    --surface2: #1e2230;
+    --border: #2a2f3e;
+    --amber: #f5a623;
+    --amber-dim: #c47d0e;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --blue: #4a9eff;
+    --text: #e8eaf0;
+    --text-dim: #7a8099;
+    --text-muted: #4a5068;
+    --track: #f5a623;
+    --glow: rgba(245,166,35,0.15);
+  }
 
-        body.light-theme {
-            --bg-color: #f5f5f5;
-            --surface-color: #ffffff;
-            --header-color: #ffffff;
-            --border-color: #e0e0e0;
-            --text-color: #222222;
-            --text-muted-color: #666666;
-            --editor-bg: #ffffff;
-            --input-bg: #ffffff;
-            --input-border: #cccccc;
-        }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+  }
 
-        /* --- Premium Slim Scrollbar --- */
-        ::-webkit-scrollbar {
-            width: 5px; height: 5px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(150, 150, 150, 0.2);
-            border-radius: 20px;
-            background-clip: content-box;
-            border: 1px solid transparent;
-            transition: all 0.3s ease;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-color);
-        }
-        * {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(150, 150, 150, 0.2) transparent;
-        }
+  /* ── SCREENS ─────────────────────────────── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-color); color: var(--text-color);
-            overflow: hidden; display: flex; flex-direction: column; height: 100dvh;
-            scrollbar-gutter: stable;
-        }
+  /* ── SCREEN 1: DIRECTION ─────────────────── */
+  #screen-direction {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    background: radial-gradient(ellipse at 50% 30%, #1a1f30 0%, var(--bg) 70%);
+  }
 
-        
+  .logo-area { text-align: center; margin-bottom: 3rem; }
+  .logo-icon {
+    width: 64px; height: 64px;
+    background: var(--amber);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; margin: 0 auto 1rem;
+    box-shadow: 0 0 40px rgba(245,166,35,0.4);
+  }
+  .logo-title {
+    font-size: 2rem; font-weight: 700; letter-spacing: 4px;
+    color: var(--text);
+  }
+  .logo-sub {
+    font-size: 0.85rem; color: var(--text-dim); letter-spacing: 2px;
+    font-family: 'Space Mono', monospace;
+  }
 
-        /* --- Header --- */
-        .header {
-            background: rgba(26, 26, 26, 0.8); /* Default Dark Glass */
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-bottom: 2px solid var(--accent-color);
-            padding: 0 20px;
-            display: flex; justify-content: space-between; align-items: center; height: 50px; flex-shrink: 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 1001;
-            transition: background 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        /* --- Light Mode Header Fix (Day Theme Ilaz) --- */
-        body.light-theme .header {
-            background: rgba(255, 255, 255, 0.85); /* Frosted White */
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Soft Shadow */
-            border-bottom: 2px solid var(--accent-color);
-        }
-        /* Fix Hamburger Menu Box in Light Mode */
-        body.light-theme .hamburger-menu {
-            background: transparent !important;
-            color: #333 !important;
-        }
-        .header h1 {
-            font-size: 20px; font-weight: bold; letter-spacing: 0.5px;
-            background: linear-gradient(90deg, var(--accent-color), #61dafb);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            background-clip: text; text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(var(--accent-color-rgb, 0, 122, 255), 0.2);
-        }
-        .theme-toggle {
-            background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); padding: 5px 15px; border-radius: 4px; cursor: pointer; transition: background 0.3s; font-size: 12px;
-        }
-        
-        /* --- Buttons --- */
-        .btn {
-            background: linear-gradient(145deg, var(--accent-color), var(--accent-hover-color)); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            color: white; padding: 7px 16px; border-radius: 8px;
-            cursor: pointer; font-size: 13px; 
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-            white-space: nowrap; display: inline-flex;
-            align-items: center; justify-content: center; gap: 8px; font-weight: 600;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-        .btn:hover { 
-            filter: brightness(1.15);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.35);
-            transform: translateY(-1.5px);
-        }
-        .btn:active {
-            transform: translateY(1px) scale(0.97);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            filter: brightness(0.9);
-        }
-        .btn-action-primary { min-width: 130px; letter-spacing: 0.3px; }
-        .btn:disabled { background: #555; color: #999; cursor: not-allowed; }
-        body.light-theme .btn:disabled { background: #e0e0e0; color: #aaa; }
-        .btn-danger { background: var(--accent-danger-color); }
-        .btn-success { background: var(--accent-success-color); }
-        .btn-warning { background: var(--accent-warning-color); }
+  .route-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    width: 100%;
+  }
+  .route-badge .label { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
+  .route-name { font-size: 1.1rem; font-weight: 600; color: var(--amber); margin-top: 0.25rem; }
 
-        /* --- Toolbar --- */
-        .toolbar {
-            background: var(--surface-color); 
-            border-bottom: 1px solid var(--border-color); 
-            padding: 8px 15px;
-            display: flex; gap: 10px; flex-wrap: wrap;
-            box-shadow: inset 0px -5px 15px rgba(0,0,0,0.2);
-        }
-        .input-container { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 4px; }
-        .input-container label { font-size: 11px; color: var(--accent-color); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
-        .textarea-wrapper { position: relative; width: 100%; }
-        .input-container textarea {
-            width: 100%; height: 62px;
-            resize: none; font-family: 'Monaco', 'Menlo', monospace; 
-            background: rgba(0, 0, 0, 0.3); 
-            border: 1.2px solid var(--input-border); 
-            color: #ffffff; padding: 8px 30px 8px 10px;
-            border-radius: 6px; font-size: 12px;
-            transition: all 0.2s ease; outline: none;
-        }
-        
-        /* Light Mode Input Fix */
-        body.light-theme .input-container textarea {
-            background: rgba(0, 0, 0, 0.06); /* हल्का ग्रे */
-            border-color: rgba(0, 0, 0, 0.2);
-            color: #333333; /* गहरा काला टेक्स्ट */
-        }
-        body.light-theme .input-container textarea:focus {
-            background: rgba(0, 0, 0, 0.1);
-            box-shadow: 0 0 8px rgba(0, 122, 255, 0.2);
-        }
-        .input-container textarea:focus {
-            border-color: var(--accent-color);
-            background: rgba(0, 0, 0, 0.45);
-            box-shadow: 0 0 12px rgba(var(--accent-color-rgb, 0, 122, 255), 0.4); /* Pro Neon Glow */
-            transform: translateY(-1.5px);
-        }
-        .btn-clear {
-            position: absolute; top: 50%; transform: translateY(-50%); right: 5px; background: none; border: none;
-            color: #999; font-size: 20px; cursor: pointer; z-index: 5;
-        }
-        .btn-clear:hover { color: var(--text-color); }
+  .direction-title {
+    font-size: 1rem; color: var(--text-dim); letter-spacing: 3px;
+    text-transform: uppercase; text-align: center; margin-bottom: 1.5rem;
+  }
 
-        /* --- Editor & Preview Layout --- */
-        .main-container { display: flex; flex: 1; overflow: hidden; }
-        .editor-section, .preview-section { display: flex; flex-direction: column; width: 50%; height: 100%; }
-        .section-header {
-            background: #333; padding: 0 15px; height: 30px; font-size: 13px; font-weight: 500;
-            border-bottom: 1px solid var(--border-color); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;
-        }
-        body.light-theme .section-header { background: #f0f0f0; }
-        
-        .btn-icon {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-muted-color);
-            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-icon:hover { 
-            background: var(--accent-color); color: white; border-color: var(--accent-color); 
-            transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        .btn-icon.danger-icon:hover { 
-            background: var(--accent-danger-color); border-color: var(--accent-danger-color); 
-            box-shadow: 0 4px 10px rgba(255, 69, 58, 0.3);
-        }
+  .direction-cards { display: flex; gap: 1rem; width: 100%; margin-bottom: 2rem; }
+  .dir-card {
+    flex: 1;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .dir-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--glow);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .dir-card:hover::before, .dir-card.selected::before { opacity: 1; }
+  .dir-card.selected { border-color: var(--amber); }
+  .dir-card.selected .dir-arrow { color: var(--amber); }
+  .dir-card.selected .dir-label { color: var(--amber); }
 
-        .editor-container { flex: 1; position: relative; overflow: hidden; }
-        .code-editor { height: 100%; width: 100%; }
+  .dir-arrow { font-size: 2.5rem; margin-bottom: 0.5rem; color: var(--text-dim); transition: all 0.2s; }
+  .dir-label { font-size: 1rem; font-weight: 700; letter-spacing: 2px; color: var(--text-dim); transition: all 0.2s; }
+  .dir-endpoints { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem; font-family: 'Space Mono', monospace; }
 
-        /* --- Ace Editor Customization --- */
-        .ace_gutter { background: rgba(0,0,0,0.1) !important; color: var(--text-muted-color) !important; border-right: 1px solid rgba(255,255,255,0.05); }
-        .ace_active-line { background: rgba(150, 150, 150, 0.1) !important; }
-        .ace_gutter-active-line { background: var(--accent-color) !important; color: white !important; }
-        .ace_cursor { border-left: 2px solid var(--accent-color) !important; }
-        .ace_marker-layer .ace_selection {
-            background: var(--accent-color) !important;
-            opacity: 0.5 !important; /* रंग को गहरा किया */
-            border: 2px solid var(--accent-color) !important; /* बॉर्डर जोड़ा */
-            box-shadow: 0 0 10px var(--accent-color) !important; /* ग्लो इफ़ेक्ट ताकि दूर से दिखे */
-            border-radius: 3px;
-        }
-        .ace_indent-guide { opacity: 0.3; }
+  .start-btn {
+    width: 100%;
+    background: var(--amber);
+    color: #0d0f14;
+    border: none;
+    border-radius: 14px;
+    padding: 1.1rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(245,166,35,0.3);
+  }
+  .start-btn:active { transform: scale(0.97); }
+  .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-        .preview-section { border-left: 1px solid var(--border-color); }
-        .preview-header {
-            background: #333; padding: 8px 15px; font-size: 13px; font-weight: 500; border-bottom: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
-        }
-        body.light-theme .preview-header { background: #f0f0f0; }
-        .live-indicator { color: var(--accent-success-color); font-size: 11px; display: flex; align-items: center; gap: 5px; }
-        .live-dot { width: 8px; height: 8px; background: var(--accent-success-color); border-radius: 50%; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .preview-frame { 
-            flex: 1; border: none; background: white; 
-            width: 100%; height: 100%; 
-            transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            margin: 0 auto; /* सेंटर में रखने के लिए */
-        }
-        
-        /* Device Switcher Buttons */
-        .device-switcher { display: flex; gap: 5px; background: rgba(0,0,0,0.2); padding: 3px; border-radius: 8px; }
-        .device-btn {
-            background: transparent; border: none; color: var(--text-muted-color);
-            width: 32px; height: 32px; border-radius: 6px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: 0.3s;
-        }
-        .device-btn.active { background: var(--accent-color); color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .device-btn:hover:not(.active) { background: rgba(255,255,255,0.1); }
+  /* ── SCREEN 2: TRACKER ───────────────────── */
+  #screen-tracker { padding: 0; }
 
-        .hidden-file-input { display: none; }
-        
-        .fullscreen-btn {
-            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 10px;
-            border-radius: 4px; cursor: pointer; font-size: 14px;
-        }
-        body.fullscreen-preview .header, body.fullscreen-preview .toolbar, body.fullscreen-preview .tab-bar,
-        body.fullscreen-preview .editor-section, body.fullscreen-preview .footer-toolbar, body.fullscreen-preview .side-panel { display: none; }
-        body.fullscreen-preview .main-container { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; }
-        body.fullscreen-preview .preview-section { width: 100%; height: 100%; border-left: none; }
-        body.side-panel-open { overflow: hidden; }
-        .fullscreen-btn .fa-compress { display: none; }
-        body.fullscreen-preview .fullscreen-btn .fa-expand { display: none; }
-        body.fullscreen-preview .fullscreen-btn .fa-compress { display: inline-block; }
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.2rem 0.8rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 0.6rem; }
+  .back-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.4rem 0.6rem;
+    color: var(--text); cursor: pointer; font-size: 1rem;
+  }
+  .header-title { font-size: 1.1rem; font-weight: 700; letter-spacing: 2px; }
+  .dir-indicator {
+    background: var(--glow);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 1px;
+    padding: 0.3rem 0.6rem; border-radius: 6px;
+  }
+  .gps-status {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; font-family: 'Space Mono', monospace;
+  }
+  .gps-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1.5s infinite;
+  }
+  .gps-dot.active { background: var(--green); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-        /* AJ New: Navigation Container with Pop-in Animation */
-        @keyframes searchPop {
-            0% { transform: scale(0.5); opacity: 0; }
-            70% { transform: scale(1.05); }
-            100% { transform: scale(1); opacity: 1; }
-        }
+  /* NEXT STATION CARD */
+  .next-station-card {
+    margin: 1rem;
+    background: linear-gradient(135deg, var(--surface2) 0%, #1a1f2e 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.4rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .next-station-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--amber), transparent);
+    border-radius: 20px 20px 0 0;
+  }
+  .ns-label {
+    font-size: 0.7rem; letter-spacing: 3px; color: var(--text-dim);
+    text-transform: uppercase; margin-bottom: 0.6rem;
+    font-family: 'Space Mono', monospace;
+  }
+  .ns-main { display: flex; align-items: flex-end; justify-content: space-between; }
+  .ns-name { font-size: 2.2rem; font-weight: 700; color: var(--text); line-height: 1; }
+  .ns-dist {
+    font-size: 2.5rem; font-weight: 700; color: var(--amber);
+    font-family: 'Space Mono', monospace; line-height: 1;
+  }
+  .ns-dist span { font-size: 1rem; font-weight: 400; color: var(--amber-dim); }
+  .ns-meta { display: flex; gap: 1.5rem; margin-top: 0.8rem; }
+  .ns-meta-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-dim); }
+  .ns-meta-item .icon { font-size: 0.9rem; }
 
-        .find-nav-container { 
-            display: none; 
-            align-items: center; 
-            gap: 6px; 
-            background: transparent;
-            padding: 0;
-            border: none;
-            animation: searchPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            margin-left: 5px;
-        }
+  /* PROGRESS BAR */
+  .progress-section { margin: 0 1rem 1rem; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); font-family: 'Space Mono', monospace; margin-bottom: 0.4rem; }
+  .progress-bar {
+    height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--amber-dim), var(--amber));
+    border-radius: 3px; transition: width 1s ease;
+  }
 
-        #matchCounter {
-            font-size: 11px;
-            font-weight: 700;
-            color: white !important;
-            background: var(--accent-color);
-            padding: 0 8px;
-            border-radius: 4px;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            height: 24px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-        }
+  /* MINI MAP */
+  .map-section {
+    margin: 0 1rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    height: 160px;
+    position: relative;
+  }
+  .map-canvas { width: 100%; height: 100%; }
+  .map-label {
+    position: absolute; top: 8px; left: 10px;
+    font-size: 0.65rem; color: var(--text-dim); letter-spacing: 1px;
+    font-family: 'Space Mono', monospace;
+    background: rgba(13,15,20,0.7); padding: 2px 6px; border-radius: 4px;
+  }
 
-        .btn-nav {
-            background: transparent; 
-            border: 1.2px solid var(--accent-color); 
-            color: var(--accent-color);
-            width: 24px; height: 24px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            outline: none;
-            font-size: 10px;
-        }
+  /* UPCOMING STATIONS */
+  .section-header {
+    padding: 0 1rem 0.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .section-title { font-size: 0.7rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; font-family: 'Space Mono', monospace; }
+  .alarm-all-btn {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'Rajdhani', sans-serif;
+    font-size: 0.75rem; letter-spacing: 1px; padding: 0.3rem 0.7rem;
+    border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  }
+  .alarm-all-btn:hover { border-color: var(--amber); color: var(--amber); }
 
-        /* AJ Fix: Sticky Toggle State */
-        .btn-nav.toggled {
-            background: var(--accent-color) !important;
-            color: white !important;
-        }
+  .stations-list { padding: 0 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+  .station-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.8rem 1rem;
+    display: flex; align-items: center; gap: 0.8rem;
+    transition: border-color 0.2s;
+  }
+  .station-row.current { border-color: var(--amber); }
+  .station-row.passed { opacity: 0.45; }
+  .station-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--text-muted); flex-shrink: 0;
+    border: 2px solid var(--surface2);
+  }
+  .station-dot.next { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  .station-dot.passed { background: var(--text-muted); }
+  .station-dot.upcoming { background: var(--blue); }
+  .station-dot.alarmed { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .station-info { flex: 1; }
+  .station-name { font-size: 1rem; font-weight: 600; }
+  .station-dist { font-size: 0.75rem; color: var(--text-dim); font-family: 'Space Mono', monospace; }
+  .alarm-btn {
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.35rem 0.5rem;
+    cursor: pointer; font-size: 0.85rem; color: var(--text-dim);
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .alarm-btn.set { border-color: var(--green); color: var(--green); background: rgba(46,204,113,0.08); }
 
-        .btn-nav:active { transform: scale(0.9); }
+  /* ALARM MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 100;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0;
+    padding: 1.5rem 1.5rem 2rem;
+    width: 100%; max-width: 480px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .modal-handle {
+    width: 40px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 1.2rem;
+  }
+  .modal-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .modal-sub { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1.5rem; }
+  .alarm-input-row { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; }
+  .alarm-input-row label { font-size: 0.9rem; color: var(--text-dim); flex-shrink: 0; }
+  .alarm-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.7rem 1rem;
+    color: var(--text); font-family: 'Space Mono', monospace; font-size: 1rem;
+    outline: none;
+  }
+  .alarm-input:focus { border-color: var(--amber); }
+  .alarm-input-row .unit { color: var(--text-dim); font-size: 0.85rem; flex-shrink: 0; }
+  .modal-btns { display: flex; gap: 0.8rem; }
+  .modal-cancel {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 12px; padding: 0.9rem;
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 600;
+    cursor: pointer;
+  }
+  .modal-confirm {
+    flex: 2; background: var(--amber); border: none;
+    color: #0d0f14; border-radius: 12px; padding: 0.9rem;
+    font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700;
+    letter-spacing: 2px; cursor: pointer;
+  }
 
-        .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; border-color: var(--text-muted-color); color: var(--text-muted-color); }
-        
-        #replaceAllBtn { display: none; margin-left: 10px; }
-        
-        /* --- Universal Side Panel --- */
-        .side-panel {
-            position: fixed; top: 0; right: -320px; width: 280px; height: 100vh; 
-            background: rgba(30, 30, 30, 0.85); /* Premium Glass Look */
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-left: 1px solid rgba(255,255,255,0.1); 
-            box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 2000;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            display: flex; flex-direction: column;
-        }
-        body.light-theme .side-panel { background: rgba(255, 255, 255, 0.85); }
-        .side-panel.open { right: 0; }
-        .side-panel-header {
-            background: rgba(0,0,0,0.2); padding: 18px 20px; display: flex; justify-content: space-between;
-            align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
-        }
-        .side-panel-header h3 { font-size: 18px; font-weight: 700; color: var(--accent-color); letter-spacing: 0.5px; }
-        .side-panel .btn-close { background: rgba(255,255,255,0.05); border: none; color: var(--text-color); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; }
-        .side-panel .btn-close:hover { background: var(--accent-danger-color); color: white; transform: rotate(90deg); }
-        .side-panel-content { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .side-panel .btn { 
-            width: 100%; justify-content: flex-start; padding: 8px 12px; 
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); 
-            color: var(--text-color); 
-            border-radius: 8px; font-weight: 500; font-size: 13px;
-        }
-        /* Light Mode में बटनों को गहरा (Darker) करना */
-        body.light-theme .side-panel .btn {
-            background: rgba(0,0,0,0.05); /* हल्का काला टिंट */
-            border-color: rgba(0,0,0,0.1);
-            color: #333;
-        }
-        body.light-theme .side-panel .btn:hover { background: rgba(0,0,0,0.1); }
-        .side-panel .btn i { width: 25px; font-size: 16px; }
-        .side-panel .btn i.fa-undo { color: #ff9f0a; }
-        .side-panel .btn i.fa-redo { color: #30d158; }
-        .side-panel .btn i.fa-folder-open { color: #007aff; }
-        .side-panel .btn i.fa-download { color: #32ade6; }
-        .side-panel .btn i.fa-external-link-alt { color: #af52de; }
-        .side-panel .btn i.fa-trash { color: #ff453a; }
-        
-        .side-panel #fileNameSP {
-            display: block;
-            margin-top: 10px;
-            padding: 6px;
-            font-size: 11px;
-            text-align: center;
-            color: var(--accent-color);
-            font-weight: 800;
-            background: rgba(0,0,0,0.1);
-            border-radius: 6px;
-            border: 1px dashed rgba(var(--accent-color-rgb), 0.3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+  /* ALARM TOAST */
+  .toast {
+    display: none; position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
+    background: var(--green); color: #000; border-radius: 12px;
+    padding: 0.8rem 1.5rem; font-weight: 700; font-size: 1rem; z-index: 200;
+    box-shadow: 0 4px 20px rgba(46,204,113,0.4);
+    white-space: nowrap;
+  }
+  .toast.alarm { background: var(--amber); color: #000; }
+  .toast.show { display: block; animation: fadeInOut 3s forwards; }
+  @keyframes fadeInOut { 0%{opacity:0;top:0.5rem} 10%{opacity:1;top:1rem} 80%{opacity:1;top:1rem} 100%{opacity:0;top:0.5rem} }
 
-        /* --- Universal Footer Toolbar --- */
-        .footer-toolbar {
-            display: none; justify-content: space-around; align-items: center; 
-            background: rgba(25, 25, 25, 0.85); 
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(255,255,255,0.1); 
-            height: 40px; flex-shrink: 0; padding: 0 12px; gap: 10px;
-            box-shadow: 0 -8px 25px rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-        .footer-toolbar .btn { 
-            flex: 1; padding: 6px 2px; font-size: 11px; 
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 8px; color: var(--text-muted-color);
-        }
-        .footer-toolbar .btn:first-child {
-            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover-color));
-            color: white; font-weight: 800; text-transform: uppercase;
-            letter-spacing: 1px; border: none;
-            box-shadow: 0 4px 15px var(--accent-color);
-            animation: runPulse 2s infinite;
-        }
-        @keyframes runPulse {
-            0% { box-shadow: 0 0 8px var(--accent-color); transform: scale(1); }
-            50% { box-shadow: 0 0 20px var(--accent-color); transform: scale(1.02); }
-            100% { box-shadow: 0 0 8px var(--accent-color); transform: scale(1); }
-        }
-
-        /* --- Modals --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 11000; display: none; justify-content: center; align-items: center; 
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            transition: all 0.3s ease;
-        }
-        .modal-box {
-            background: var(--surface-color); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            color: var(--text-color);
-            padding: 28px; border-radius: 20px;
-            max-width: 85%; width: 340px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6); 
-            animation: modernPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes modernPop { 
-            from { opacity: 0; transform: scale(0.8) translateY(20px); } 
-            to { opacity: 1; transform: scale(1) translateY(0); } 
-        }
-        .modal-box p { margin-bottom: 24px; font-size: 15px; line-height: 1.6; font-weight: 500; opacity: 0.9; }
-        .modal-buttons { display: flex; justify-content: center; gap: 12px; }
-        .modal-buttons .btn { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px; }
-        .modal-buttons .btn-secondary { 
-            background: rgba(255,255,255,0.05); 
-            color: var(--text-color); 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        .modal-buttons .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: none; }
-
-        /* --- Toast System --- */
-        .toast-container {
-            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-            z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;
-        }
-        .toast {
-            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            color: white; padding: 12px 24px; border-radius: 50px; font-size: 13px; font-weight: 600;
-            display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1); border-bottom: 2px solid var(--accent-color);
-            animation: toastSlideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            white-space: nowrap;
-        }
-        @keyframes toastSlideUp {
-            from { opacity: 0; transform: translateY(40px) scale(0.8); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .toast.fade-out { opacity: 0; transform: translateY(-20px) scale(0.9); transition: 0.5s; }
-
-        /* --- Theme Chooser --- */
-        .theme-chooser { 
-            margin-top: 8px; padding: 10px; 
-            background: rgba(0,0,0,0.2); 
-            border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);
-        }
-        /* Light Mode में बॉक्स का रंग ठीक करना */
-        body.light-theme .theme-chooser {
-            background: rgba(0,0,0,0.05);
-            border-color: rgba(0,0,0,0.1);
-        }
-
-        .theme-chooser-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .theme-chooser h4 { font-size: 10px; color: var(--text-muted-color); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; opacity: 0.8; }
-        
-        .light-dark-toggle { display: flex; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 2px; border: 1px solid rgba(255,255,255,0.05); min-width: 80px; }
-        
-        /* Light Mode में टॉगल का रंग ठीक करना */
-        body.light-theme .light-dark-toggle {
-            background: rgba(0,0,0,0.05);
-            border-color: rgba(0,0,0,0.1);
-        }
-        .light-dark-toggle button {
-            flex: 1; background: transparent; border: none; color: var(--text-muted-color); padding: 4px; cursor: pointer; border-radius: 4px; transition: 0.3s; font-size: 12px;
-        }
-        .light-dark-toggle button.active { background: var(--accent-color); color: white; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
-        .accent-colors { 
-            display: flex; 
-            gap: 6px; 
-            overflow-x: auto; 
-            padding: 5px 0; 
-            scrollbar-width: none; 
-            -ms-overflow-style: none;
-        }
-        .accent-colors::-webkit-scrollbar { display: none; }
-        .color-swatch {
-            flex-shrink: 0;
-            width: 24px; height: 24px; border-radius: 6px; cursor: pointer; 
-            border: 2px solid rgba(255,255,255,0.1);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            scroll-snap-align: start;
-        }
-        .color-swatch:hover { transform: scale(1.15); filter: brightness(1.2); }
-        .color-swatch.active { 
-            border: 2px solid white; 
-            box-shadow: 0 0 15px var(--accent-color);
-            transform: scale(1.1);
-        }
-        .color-swatch:hover { transform: scale(1.1); }
-        .color-swatch.active { border-color: var(--accent-color); box-shadow: 0 0 10px var(--accent-color); }
-
-        /* --- Markers & Highlights --- */
-        .green-marker {
-            position: absolute;
-            background-color: rgba(48, 209, 88, 0.35); 
-            z-index: 20;
-            border-radius: 4px;
-            animation: highlightFlash 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes highlightFlash {
-            0% { background-color: rgba(48, 209, 88, 0.9); transform: scale(1.02); }
-            50% { background-color: rgba(48, 209, 88, 0.5); }
-            100% { background-color: rgba(48, 209, 88, 0.3); transform: scale(1); }
-        }
-        .ace_marker-layer .ace_selection {
-            background: rgba(0, 122, 255, 0.35) !important;
-            box-shadow: 0 0 12px rgba(0, 122, 255, 0.6);
-            border-radius: 3px;
-            border: 1px solid rgba(0, 122, 255, 0.5);
-        }
-        .ace_search_marker {
-            background: rgba(255, 159, 10, 0.2) !important; 
-            border: 1px solid rgba(255, 159, 10, 0.4);
-            border-radius: 2px;
-        }
-
-        /* सर्च मैच को फोकस करने के लिए ग्लो एनीमेशन */
-        .current-match-glow {
-            position: absolute;
-            background-color: rgba(255, 159, 10, 0.6);
-            z-index: 20;
-            border-radius: 4px;
-            box-shadow: 0 0 25px rgba(255, 159, 10, 1);
-            animation: matchFocusGlow 1.8s ease-out forwards;
-        }
-        /* लाइन हाइलाइट ताकि आसपास का कोड (Context) दिखे */
-        .context-line-highlight {
-            position: absolute;
-            background-color: rgba(0, 199, 190, 0.15);
-            z-index: 5;
-            border-left: 4px solid #00c7be;
-        }
-        @keyframes matchFocusGlow {
-            0% { opacity: 1; transform: scale(1.05); }
-            100% { opacity: 0; transform: scale(1); }
-        }
-
-        /* --- Change Counter Badge --- */
-        .change-counter {
-            font-size: 11px;
-            color: white;
-            font-weight: 800;
-            display: none;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover-color));
-            padding: 4px 10px;
-            border-radius: 50px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .change-counter.bump {
-            animation: counterBump 0.4s ease-out;
-        }
-        @keyframes counterBump {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); filter: brightness(1.3); }
-            100% { transform: scale(1); }
-        }
-
-        /* --- Mobile Responsive --- */
-        @media (max-width: 768px) {
-            /* कीबोर्ड खुलने पर फालतू चीजें छिपाने के लिए */
-            body.keyboard-open .footer-toolbar, 
-            body.keyboard-open .tab-bar, 
-            body.keyboard-open .header,
-            body.keyboard-open #toolbar-slider { display: none !important; }
-            /* एडिटर को कीबोर्ड के ऊपर पूरी जगह देने के लिए */
-            body.keyboard-open .main-container { flex: 1; height: auto; }
-            body.keyboard-open .quick-symbol-bar { border-top: 1px solid var(--border-color); background: var(--surface-color); }
-
-            .header h1 { font-size: 18px; }
-            
-            /* Quick Symbol Bar Styles */
-            .quick-symbol-bar {
-                display: flex; gap: 8px; padding: 6px 10px;
-                background: var(--surface-color); border-bottom: 1px solid var(--border-color);
-                overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
-                flex-shrink: 0;
-            }
-            .quick-symbol-bar::-webkit-scrollbar { display: none; }
-            .symbol-btn {
-                background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);
-                color: var(--accent-color); padding: 6px 14px; border-radius: 8px;
-                font-family: 'Monaco', monospace; font-weight: bold; cursor: pointer; font-size: 16px;
-                transition: all 0.2s; min-width: 42px; text-align: center; border-bottom: 2px solid rgba(0,0,0,0.2);
-            }
-            .symbol-btn:active { background: var(--accent-color); color: white; transform: translateY(2px); border-bottom: 0; }
-            body.light-theme .symbol-btn { background: #fff; border-color: #ddd; }
-
-            .header .theme-toggle { display: none; }
-            .main-container { flex-direction: column; }
-            .editor-section, .preview-section { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: none; }
-            .editor-section.active, .preview-section.active { display: flex; position: relative; }
-            .preview-section { border-left: none; }
-            
-            .hamburger-menu { display: block; background: transparent; color: var(--text-color); border: none; font-size: 22px; padding: 5px; cursor: pointer; z-index: 1100; position: relative; display: flex; align-items: center; justify-content: center; }
-            
-            .tab-bar {
-                display: flex; justify-content: space-around; background: var(--surface-color);
-                border-bottom: 1px solid var(--border-color); height: 40px; flex-shrink: 0;
-            }
-            .tab-button {
-                flex: 1; background: transparent; border: none; color: var(--text-muted-color); padding: 10px 0;
-                font-size: 14px; cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent;
-            }
-            .tab-button.active { border-bottom-color: var(--accent-color); color: var(--accent-color); }
-            
-            .toolbar { flex-direction: column; }
-            
-            /* Toolbar Slider Logic */
-            #toolbar-slider { display: block; }
-            .footer-toolbar { display: flex; }
-            .toolbar { transition: all 0.3s ease; max-height: 500px; overflow: hidden; }
-            body.toolbar-collapsed .toolbar { max-height: 0; padding-top: 0; padding-bottom: 0; border-bottom: none; }
-            body.toolbar-collapsed #toolbar-slider i { transform: rotate(180deg); }
-        }
-        
-        #toolbar-slider {
-            display: none; background: var(--surface-color); padding: 4px 0;
-            text-align: center; cursor: pointer; border-bottom: 1px solid var(--border-color);
-            color: var(--text-muted-color); position: relative; z-index: 10;
-        }
-        #toolbar-slider i { transition: transform 0.3s ease; }
-
-    </style>
+  /* SCROLLABLE CONTENT */
+  .tracker-content { flex: 1; overflow-y: auto; padding-bottom: 2rem; }
+  .tracker-content::-webkit-scrollbar { width: 0; }
+</style>
 </head>
 <body>
-    
 
-    <!-- Header -->
-    <div class="header">
-        <h1>Easy Html Editer v1.0</h1>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <button class="theme-toggle" onclick="toggleLightDark()" style="margin-right: 5px;">
-                <i class="fas fa-sun"></i> <span>Light Mode</span>
-            </button>
-            <button class="btn-icon" onclick="openMagicPanel()" title="AI Multi-Update" style="background: linear-gradient(135deg, #622774 0%, #c53364 100%); color: white; border: none; width: 36px; height: 36px; border-radius: 10px; box-shadow: 0 4px 15px rgba(197, 51, 100, 0.4); flex-shrink: 0;">
-                <i class="fas fa-wand-magic-sparkles" style="font-size: 16px;"></i>
-            </button>
-            <button class="hamburger-menu" onclick="toggleSidePanel()">
-                <i class="fas fa-bars"></i>
-            </button>
-        </div>
+<!-- SCREEN 1: DIRECTION -->
+<div id="screen-direction" class="screen active">
+  <div class="logo-area">
+    <div class="logo-icon">🚂</div>
+    <div class="logo-title">RAIL TRACK</div>
+    <div class="logo-sub">LIVE STATION TRACKER</div>
+  </div>
+  <div class="route-badge">
+    <div class="label">ROUTE</div>
+    <div class="route-name">Manabar ↔ Bacheli Line</div>
+  </div>
+  <div class="direction-title">Direction Chuniye</div>
+  <div class="direction-cards">
+    <div class="dir-card" id="card-up" onclick="selectDir('UP')">
+      <div class="dir-arrow">⬆</div>
+      <div class="dir-label">UP</div>
+      <div class="dir-endpoints">Manabar<br>→ Bacheli</div>
+    </div>
+    <div class="dir-card" id="card-down" onclick="selectDir('DOWN')">
+      <div class="dir-arrow">⬇</div>
+      <div class="dir-label">DOWN</div>
+      <div class="dir-endpoints">Bacheli<br>→ Manabar</div>
+    </div>
+  </div>
+  <button class="start-btn" id="start-btn" disabled onclick="startTracking()">
+    TRACKING SHURU KARO
+  </button>
+</div>
+
+<!-- SCREEN 2: TRACKER -->
+<div id="screen-tracker" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div class="header-title">RAIL TRACK</div>
+      <div class="dir-indicator" id="dir-badge">UP ↑</div>
+    </div>
+    <div class="gps-status">
+      <div class="gps-dot" id="gps-dot"></div>
+      <span id="gps-text">GPS...</span>
+    </div>
+  </div>
+
+  <div class="tracker-content">
+    <div id="active-alarm-ui" style="display:none; background: var(--amber); color: #000; padding: 15px; border-radius: 12px; margin: 10px; text-align: center; animation: pulse 1s infinite; z-index: 50;">
+      <div style="font-weight: bold; font-size: 1.1rem;">🔔 STATION AA GAYA!</div>
+      <button onclick="stopAlarm()" style="margin-top:10px; background: #000; color: #fff; border:none; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">STOP ALARM</button>
+    </div>
+    <!-- NEXT STATION -->
+    <div class="next-station-card">
+      <div class="ns-label">▶ NEXT STATION</div>
+      <div class="ns-main">
+        <div class="ns-name" id="next-name">—</div>
+        <div class="ns-dist" id="next-dist">—<span> km</span></div>
+      </div>
+      <div class="ns-meta">
+        <div class="ns-meta-item"><span class="icon">⏱</span><span id="next-eta">— min</span></div>
+        <div class="ns-meta-item"><span class="icon">📍</span><span id="current-loc">Locating...</span></div>
+        <div class="ns-meta-item"><span class="icon">🔔</span><span id="alarm-status">No Alarm</span></div>
+      </div>
     </div>
 
-    <!-- Search and Replace Toolbar -->
-    <div class="toolbar">
-        <div class="input-container">
-            <label for="findBlock" style="display: flex; justify-content: space-between; align-items: center;">
-                <span><i class="fas fa-search"></i> इस कोड को खोजें:</span> 
-                <span id="uploadedFileName" style="color: var(--accent-color); font-weight: bold; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; display: inline-block; text-align: right;"></span>
-            </label>
-            <div class="textarea-wrapper">
-                <textarea id="findBlock" placeholder="यहाँ पुराना कोड पेस्ट करें..."></textarea>
-                <button class="btn-clear" onclick="clearInput('findBlock')" title="Clear">×</button>
-            </div>
-            <button class="btn btn-action-primary" onclick="findAndSelectText()"><i class="fas fa-search"></i> खोजें</button>
-        </div>
-        <div class="input-container">
-            <label for="replaceBlock"><i class="fas fa-exchange-alt"></i> इस कोड से बदलें (Replace with this code):</label>
-            <div class="textarea-wrapper">
-                <textarea id="replaceBlock" placeholder="यहाँ नया कोड पेस्ट करें..."></textarea>
-                <button class="btn-clear" onclick="clearInput('replaceBlock')" title="Clear">×</button>
-            </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <div style="display: flex; align-items: center;">
-                    <button class="btn btn-action-primary" onclick="replaceCodeBlock()"><i class="fas fa-magic"></i> कोड बदलें</button>
-                    <button class="btn btn-warning" id="replaceAllBtn" onclick="replaceAllCode()"><i class="fas fa-bolt"></i> सबको बदलें</button>
-                </div>
-                <span id="changeCounter" class="change-counter"></span>
-            </div>
-        </div>
+    <!-- PROGRESS -->
+    <div class="progress-section">
+      <div class="progress-label">
+        <span id="prog-from">—</span>
+        <span id="prog-to">—</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     </div>
 
-    <!-- Toolbar Slider Handle -->
-    <div id="toolbar-slider" onclick="toggleToolbar()">
-        <i class="fas fa-chevron-up"></i>
+    <!-- MINI MAP -->
+    <div class="map-section">
+      <div class="map-label">LIVE MAP</div>
+      <canvas class="map-canvas" id="map-canvas"></canvas>
     </div>
 
-    <!-- Mobile Tab Bar -->
-    <div class="tab-bar">
-        <button class="tab-button active" id="editorTabBtn" onclick="showSection('editor')">
-            <i class="fas fa-code"></i> कोड
-        </button>
-        <button class="tab-button" id="previewTabBtn" onclick="showSection('preview')">
-            <i class="fas fa-eye"></i> प्रिव्यू
-        </button>
+    <!-- UPCOMING STATIONS -->
+    <div class="section-header">
+      <div class="section-title">ALL STATIONS</div>
+      <button class="alarm-all-btn" onclick="openAlarmModal(-1)">🔔 Set All Alarms</button>
     </div>
+    <div class="stations-list" id="stations-list"></div>
+  </div>
+</div>
 
-    <!-- Main Container -->
-    <div class="main-container">
-        <!-- Editor Section -->
-        <div class="editor-section active" id="editorSection">
-            <div class="section-header">
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <span><i class="fas fa-code"></i> Editor (HTML)</span>
-                    <div class="find-nav-container" id="findNavContainer">
-                        <button class="btn-nav" id="findPrevBtn" onclick="findPrev()" title="पिछला खोजें"><i class="fas fa-arrow-up"></i></button>
-                        <button class="btn-nav" id="findNextBtn" onclick="findNext()" title="अगला खोजें"><i class="fas fa-arrow-down"></i></button>
-                        <span id="matchCounter" style="font-size: 12px; margin-left: 8px; color: var(--text-muted-color);"></span>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-icon" onclick="copyAllCode()" title="Copy All Code" id="copyBtn">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                    <button class="btn-icon danger-icon" onclick="clearEditor()" title="Clear Editor">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <!-- Symbol Bar Removed to save space on mobile -->
-            <div class="editor-container">
-                <div class="code-editor" id="codeEditor"><!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>मेरी वेबसाइट</title>
-</head>
-<body>
-    <h1>स्वागत है!</h1>
-</body>
-</html></div>
-            </div>
-        </div>
-
-        <!-- Preview Section -->
-        <div class="preview-section" id="previewSection">
-            <div class="preview-header">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span><i class="fas fa-eye"></i> प्रिव्यू</span>
-                    <div class="device-switcher">
-                        <button class="device-btn active" onclick="setPreviewDevice('desktop', this)" title="Desktop View"><i class="fas fa-desktop"></i></button>
-                        <button class="device-btn" onclick="setPreviewDevice('tablet', this)" title="Tablet View"><i class="fas fa-tablet-alt"></i></button>
-                        <button class="device-btn" onclick="setPreviewDevice('mobile', this)" title="Mobile View"><i class="fas fa-mobile-alt"></i></button>
-                    </div>
-                </div>
-                <div class="live-indicator"> <div class="live-dot"></div> <span>Live</span> </div>
-                <button class="fullscreen-btn" onclick="toggleFullScreenPreview()" title="Toggle Fullscreen">
-                    <i class="fas fa-expand"></i>
-                    <i class="fas fa-compress"></i>
-                </button>
-            </div>
-            <iframe class="preview-frame" id="previewFrame"></iframe>
-        </div>
+<!-- ALARM MODAL -->
+<div class="modal-overlay" id="alarm-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔔 Alarm Set Karo</div>
+    <div class="modal-sub" id="modal-sub">Station se pehle alert milega</div>
+    <div class="alarm-input-row">
+      <label>Distance:</label>
+      <input class="alarm-input" type="number" id="alarm-dist-input" value="200" min="10" step="10">
+      <span class="unit">meters pehle</span>
     </div>
-
-    <!-- Side Panel -->
-    <div class="side-panel" id="sidePanel">
-        <div class="side-panel-header">
-            <h3>एक्शंस</h3>
-            <button class="btn-close" onclick="toggleSidePanel()"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="side-panel-content">
-            <button class="btn" onclick="undo()" id="undoBtnSP" disabled> <i class="fas fa-undo"></i> Undo </button>
-            <button class="btn" onclick="redo()" id="redoBtnSP" disabled> <i class="fas fa-redo"></i> Redo </button>
-            <button class="btn" onclick="uploadFile()"> <i class="fas fa-folder-open"></i> अपलोड </button>
-            <button class="btn" onclick="downloadFile()"> <i class="fas fa-download"></i> डाउनलोड </button>
-            <button class="btn" onclick="openPreview()"> <i class="fas fa-external-link-alt"></i> नई विंडो में प्रिव्यू </button>
-            
-            <div class="theme-chooser">
-                 <div class="theme-chooser-header">
-                     <h4>थीम बदलें</h4>
-                     <div class="light-dark-toggle">
-                         <button id="darkToggleBtn" class="active" onclick="setLightDark('dark')"><i class="fas fa-moon"></i></button>
-                         <button id="lightToggleBtn" onclick="setLightDark('light')"><i class="fas fa-sun"></i></button>
-                     </div>
-                 </div>
-                 <div style="display:none"> <!-- Old toggle removed -->
-                     <button id="darkToggleBtn" class="active" onclick="setLightDark('dark')"><i class="fas fa-moon"></i></button>
-                     <button id="lightToggleBtn" onclick="setLightDark('light')"><i class="fas fa-sun"></i></button>
-                 </div>
-                 <div class="accent-colors">
-                     <div class="color-swatch active" style="background: #007aff;" data-color="#007aff" data-hover="#005ecb" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #30d158;" data-color="#30d158" data-hover="#28b049" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #ff453a;" data-color="#ff453a" data-hover="#d93a31" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #ff9f0a;" data-color="#ff9f0a" data-hover="#d48508" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #af52de;" data-color="#af52de" data-hover="#8e3eb3" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #5856d6;" data-color="#5856d6" data-hover="#4442a8" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #ff2d55;" data-color="#ff2d55" data-hover="#d11d40" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #00c7be;" data-color="#00c7be" data-hover="#009c95" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #32ade6;" data-color="#32ade6" data-hover="#2489b8" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #64d2ff;" data-color="#64d2ff" data-hover="#40a6cc" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #bf5af2;" data-color="#bf5af2" data-hover="#9944c2" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #ff375f;" data-color="#ff375f" data-hover="#cc2949" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #1abc9c;" data-color="#1abc9c" data-hover="#148f77" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #e67e22;" data-color="#e67e22" data-hover="#b35d10" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #f1c40f;" data-color="#f1c40f" data-hover="#c29d0b" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #2ecc71;" data-color="#2ecc71" data-hover="#219150" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #3498db;" data-color="#3498db" data-hover="#2471a3" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #9b59b6;" data-color="#9b59b6" data-hover="#76448a" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #e74c3c;" data-color="#e74c3c" data-hover="#b03a2e" onclick="setAccentColor(this)"></div>
-                     <div class="color-swatch" style="background: #34495e;" data-color="#34495e" data-hover="#212f3d" onclick="setAccentColor(this)"></div>
-                 </div>
-                 <span class="file-name" id="fileNameSP">फाइल: index.html</span>
-            </div>
-        </div>
+    <div class="alarm-settings" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; background: var(--surface2); padding: 10px; border-radius: 12px; border: 1px solid var(--border);">
+      <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+        <input type="checkbox" id="pref-vibrate" checked> 📳 Vibrate
+      </label>
+      <label style="font-size: 0.85rem; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+        <input type="checkbox" id="pref-beep" checked> 🔊 Beep Sound
+      </label>
     </div>
-
-    <!-- Footer Toolbar -->
-    <div class="footer-toolbar">
-        <button class="btn" onclick="beautifyCode()" title="Format Code"> <i class="fas fa-magic"></i> फ़ॉर्मेट </button>
-        <button class="btn" onclick="undo()" id="undoBtnFT" disabled> <i class="fas fa-undo"></i> </button>
-        <button class="btn" onclick="redo()" id="redoBtnFT" disabled> <i class="fas fa-redo"></i> </button>
-        <button class="btn" onclick="uploadFile()"> <i class="fas fa-folder-open"></i> </button>
-        <button class="btn" onclick="downloadFile()"> <i class="fas fa-download"></i> </button>
+    
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmAlarm()">SET ALARM</button>
     </div>
+  </div>
+</div>
 
-    <input type="file" class="hidden-file-input" id="fileInput" accept=".html,.htm,.txt" onchange="handleFileUpload(event)">
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
-    <!-- Modals -->
-    <div class="modal-overlay" id="customModal">
-        <div class="modal-box">
-            <p id="modalMessage"></p>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
-                <button class="btn" id="modalOkBtn">OK</button>
-            </div>
-        </div>
-    </div>
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const STATIONS_RAW = [
+  {"station":"Manabar","lat":18.840492,"lon":82.695571},
+  {"station":"Jarati","lat":18.891874,"lon":82.665381},
+  {"station":"Maligura","lat":18.953505,"lon":82.638622},
+  {"station":"Chattariput","lat":18.922689,"lon":82.590097},
+  {"station":"Jeypore","lat":18.895231,"lon":82.555724},
+  {"station":"Dhanapur","lat":18.942042,"lon":82.513883},
+  {"station":"Khadapa","lat":18.982736,"lon":82.468617},
+  {"station":"Charamula Kusumi","lat":19.01612,"lon":82.415111},
+  {"station":"Kotapar Road","lat":19.041657,"lon":82.307835},
+  {"station":"Ambagoan","lat":19.061753,"lon":82.241258},
+  {"station":"Amagura","lat":19.068659,"lon":82.147901},
+  {"station":"Nakti Semra","lat":19.061776,"lon":82.073807},
+  {"station":"Jagdalpur","lat":19.066038,"lon":82.01414},
+  {"station":"Kumhar Marenga","lat":19.034652,"lon":81.946605},
+  {"station":"Tokapal","lat":19.006474,"lon":81.878587},
+  {"station":"Bade Arapur","lat":19.012629,"lon":81.828722},
+  {"station":"Dilmili","lat":18.987838,"lon":81.737704},
+  {"station":"Silak Jhori","lat":18.977709,"lon":81.67065},
+  {"station":"Kumar Sodra","lat":18.919577,"lon":81.686003},
+  {"station":"Kaklur","lat":18.883297,"lon":81.620983},
+  {"station":"Kawargaon","lat":18.896378,"lon":81.537849},
+  {"station":"Dabpal","lat":18.928082,"lon":81.488991},
+  {"station":"Gidam","lat":18.936727,"lon":81.412305},
+  {"station":"Dantewara","lat":18.908166,"lon":81.355817},
+  {"station":"Bacheli","lat":18.703747,"lon":81.238185}
+];
 
-    <div class="modal-overlay" id="renameModal">
-        <div class="modal-box" style="border-top: 5px solid var(--accent-color);">
-            <h3 style="margin-bottom: 20px; color: var(--text-color); font-weight: 700; font-size: 18px;">फाइल का नाम बदलें</h3>
-            <div style="margin-bottom: 25px;">
-                <input type="text" id="renameInput" placeholder="filename.html" 
-                       style="width: 100%; padding: 15px; background: var(--input-bg); 
-                              border: 2px solid var(--input-border); border-left: 5px solid var(--accent-color); 
-                              color: var(--text-color); border-radius: 8px; outline: none; 
-                              font-size: 16px; font-weight: 500; font-family: 'Segoe UI', sans-serif;">
-            </div>
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" onclick="closeRenameModal()" style="padding: 12px 20px;">Cancel</button>
-                <button class="btn" onclick="confirmDownload()" style="background: var(--accent-color); color: white; box-shadow: 0 4px 15px var(--accent-color); padding: 12px 25px;"><i class="fas fa-download"></i> Save File</button>
-            </div>
-        </div>
-    </div>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let direction = null;
+let stations = [];
+let userLat = null, userLon = null;
+let alarms = {}; // { stationIndex: distanceKm }
+let watchId = null;
+let alarmTarget = null;
+let firedAlarms = new Set();
+let SPEED_KMH = 40; 
+let audioCtx = null;
+let alarmInterval = null;
 
-    <script>
-    // --- APP LOGIC ---
-    const editorElement = document.getElementById('codeEditor');
-    const sidePanel = document.getElementById('sidePanel');
-    const body = document.body;
-    const themeToggleBtn = document.querySelector('.header .theme-toggle');
-    const hamburgerMenu = document.querySelector('.hamburger-menu');
+// Audio context unlock
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
 
-    let aceEditor; 
-    let sidePanelOpen = false;
-    let searchMatches = [];
-    let currentMatchIndex = -1;
-    let totalChanges = 0;
-    let currentMarkers = []; 
-    let originalFileName = 'index.html'; 
+function playBeep() {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.type = 'square';
+  osc.frequency.value = 880; 
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.5);
+}
 
+function stopAlarm() {
+  if (alarmInterval) clearInterval(alarmInterval);
+  document.getElementById('active-alarm-ui').style.display = 'none';
+  if ('vibrate' in navigator) navigator.vibrate(0);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function closestStation(lat, lon) {
+  let minDist = Infinity, idx = 0;
+  stations.forEach((s, i) => {
+    const d = haversine(lat, lon, s.lat, s.lon);
+    if (d < minDist) { minDist = d; idx = i; }
+  });
+  return { idx, dist: minDist };
+}
+
+let currentTargetIdx = -1;
+
+function nextStation(lat, lon) {
+  let bestSegmentEndIdx = 0;
+  let minError = Infinity;
+
+  // 1. Identify current segment using distance-sum logic
+  for (let i = 0; i < stations.length - 1; i++) {
+    let d1 = haversine(lat, lon, stations[i].lat, stations[i].lon);
+    let d2 = haversine(lat, lon, stations[i+1].lat, stations[i+1].lon);
+    let segmentLine = haversine(stations[i].lat, stations[i].lon, stations[i+1].lat, stations[i+1].lon);
     
-
-    // --- THEME MANAGEMENT ---
-    function setLightDark(mode) {
-        const isLight = mode === 'light';
-        const lightBtn = document.getElementById('lightToggleBtn');
-        const darkBtn = document.getElementById('darkToggleBtn');
-        
-        body.classList.toggle('light-theme', isLight);
-        themeToggleBtn.innerHTML = isLight ? '<i class="fas fa-moon"></i> <span>Dark Mode</span>' : '<i class="fas fa-sun"></i> <span>Light Mode</span>';
-        
-        if(lightBtn) lightBtn.classList.toggle('active', isLight);
-        if(darkBtn) darkBtn.classList.toggle('active', !isLight);
-        
-        if (aceEditor) { 
-            aceEditor.setTheme(isLight ? 'ace/theme/chrome' : 'ace/theme/tomorrow_night'); 
-        }
-        localStorage.setItem('editorThemeMode', mode);
+    let error = (d1 + d2) - segmentLine;
+    if (error < minError) {
+      minError = error;
+      bestSegmentEndIdx = i + 1;
     }
+  }
 
-    function setAccentColor(element) {
-        const color = element.getAttribute('data-color');
-        const hoverColor = element.getAttribute('data-hover');
-        document.documentElement.style.setProperty('--accent-color', color);
-        document.documentElement.style.setProperty('--accent-hover-color', hoverColor);
-        document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
-        element.classList.add('active');
-        localStorage.setItem('editorAccentColor', color);
-        localStorage.setItem('editorAccentHoverColor', hoverColor);
-    }
+  // 2. Boundary Check: Handling the very first station
+  let distToFirst = haversine(lat, lon, stations[0].lat, stations[0].lon);
+  if (bestSegmentEndIdx === 1) {
+      let d01 = haversine(stations[0].lat, stations[0].lon, stations[1].lat, stations[1].lon);
+      let dU1 = haversine(lat, lon, stations[1].lat, stations[1].lon);
+      if (distToFirst + d01 > dU1 && distToFirst < 5) {
+          bestSegmentEndIdx = 0; 
+      }
+  }
+
+  // 3. Strict Forward Lock: Ensure currentTargetIdx only moves ahead
+  if (bestSegmentEndIdx > currentTargetIdx) {
+    currentTargetIdx = bestSegmentEndIdx;
+  }
+
+  const finalDist = haversine(lat, lon, stations[currentTargetIdx].lat, stations[currentTargetIdx].lon);
+  return { idx: currentTargetIdx, dist: finalDist };
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.className = 'toast', 3200);
+}
+
+// ── DIRECTION SCREEN ──────────────────────────────────────────────────────────
+function selectDir(dir) {
+  direction = dir;
+  document.getElementById('card-up').classList.toggle('selected', dir === 'UP');
+  document.getElementById('card-down').classList.toggle('selected', dir === 'DOWN');
+  document.getElementById('start-btn').disabled = false;
+}
+
+function startTracking() {
+  initAudio();
+  if (!direction) return;
+  localStorage.setItem('rail_dir', direction);
+  stations = direction === 'UP' ? [...STATIONS_RAW] : [...STATIONS_RAW].reverse();
+  document.getElementById('screen-direction').classList.remove('active');
+  document.getElementById('screen-tracker').classList.add('active');
+  document.getElementById('dir-badge').textContent = direction === 'UP' ? 'UP ↑' : 'DOWN ↓';
+  document.getElementById('prog-from').textContent = stations[0].station;
+  document.getElementById('prog-to').textContent = stations[stations.length-1].station;
+  
+  const savedAlarms = localStorage.getItem('rail_alarms');
+  if(savedAlarms) alarms = JSON.parse(savedAlarms);
+
+  renderStationsList();
+  startGPS();
+  setInterval(updateUI, 3000);
+}
+
+window.onload = () => {
+  const savedDir = localStorage.getItem('rail_dir');
+  if(savedDir) {
+    selectDir(savedDir);
+    setTimeout(startTracking, 500);
+  }
+};
+
+function goBack() {
+  if (watchId) navigator.geolocation.clearWatch(watchId);
+  localStorage.removeItem('rail_dir');
+  localStorage.removeItem('rail_alarms');
+  document.getElementById('screen-tracker').classList.remove('active');
+  document.getElementById('screen-direction').classList.add('active');
+  alarms = {}; firedAlarms = new Set();
+  location.reload();
+}
+
+// ── GPS ───────────────────────────────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById('gps-text').textContent = 'GPS N/A';
+    return;
+  }
+  watchId = navigator.geolocation.watchPosition(
+    pos => {
+      userLat = pos.coords.latitude;
+      userLon = pos.coords.longitude;
+      document.getElementById('gps-dot').classList.add('active');
+      document.getElementById('gps-text').textContent = 'GPS ON';
+      updateUI();
+    },
+    err => {
+      document.getElementById('gps-text').textContent = 'GPS ERR';
+      // Use demo position near Jeypore for testing
+      if (!userLat) { userLat = 18.895231; userLon = 82.555724; updateUI(); }
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+  );
+}
+
+// ── UI UPDATE ─────────────────────────────────────────────────────────────────
+function updateUI() {
+  if (userLat === null) return;
+
+  const { idx: nextIdx, dist } = nextStation(userLat, userLon);
+  const next = stations[nextIdx];
+  const eta = Math.round(dist / SPEED_KMH * 60);
+  const distStr = dist < 1 ? (dist * 1000).toFixed(0) + ' m' : dist.toFixed(1);
+
+  document.getElementById('next-name').textContent = next.station;
+  document.getElementById('next-dist').innerHTML = `${(dist*1000).toFixed(0)}<span> m</span>`;
+  document.getElementById('next-eta').textContent = `~${eta} min`;
+  document.getElementById('current-loc').textContent = `${userLat.toFixed(4)}, ${userLon.toFixed(4)}`;
+
+  // Alarm status
+  const activeAlarms = Object.keys(alarms).length;
+  document.getElementById('alarm-status').textContent = activeAlarms > 0 ? `${activeAlarms} Alarm${activeAlarms>1?'s':''} Set` : 'No Alarm';
+
+  // Progress
+  const totalDist = haversine(stations[0].lat, stations[0].lon, stations[stations.length-1].lat, stations[stations.length-1].lon);
+  const traveled = haversine(stations[0].lat, stations[0].lon, userLat, userLon);
+  document.getElementById('progress-fill').style.width = Math.min(100, traveled/totalDist*100) + '%';
+
+  // Check alarms
+  checkAlarms(nextIdx, dist);
+
+  renderStationsList(nextIdx);
+  drawMap(nextIdx);
+}
+
+function checkAlarms(nextIdx, distToNext) {
+  Object.entries(alarms).forEach(([idxStr, alarmDist]) => {
+    const idx = parseInt(idxStr);
+    const stDist = haversine(userLat, userLon, stations[idx].lat, stations[idx].lon);
     
-    function toggleLightDark() {
-        if(body.classList.contains('light-theme')) { setLightDark('dark'); } else { setLightDark('light'); }
-    }
-    
-    // --- MODAL FUNCTIONS ---
-    const customModal = document.getElementById('customModal');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalOkBtn = document.getElementById('modalOkBtn');
-    const modalCancelBtn = document.getElementById('modalCancelBtn');
-    
-    function showCustomAlert(message) {
-        modalMessage.textContent = message;
-        modalCancelBtn.style.display = 'none';
-        modalOkBtn.textContent = 'ठीक है';
-        customModal.style.display = 'flex';
-        return new Promise((resolve) => {
-            modalOkBtn.onclick = () => { customModal.style.display = 'none'; resolve(true); };
-        });
-    }
-    
-    function showCustomConfirm(message) {
-        modalMessage.textContent = message;
-        modalCancelBtn.style.display = 'block';
-        modalOkBtn.textContent = 'हाँ';
-        modalCancelBtn.textContent = 'नहीं';
-        customModal.style.display = 'flex';
-        return new Promise((resolve) => {
-            modalOkBtn.onclick = () => { customModal.style.display = 'none'; resolve(true); };
-            modalCancelBtn.onclick = () => { customModal.style.display = 'none'; resolve(false); };
-        });
+    // Agar station pass ho gaya (dist > 1km and it was a target), to fired list mein daal do
+    if (idx < nextIdx && !firedAlarms.has(idx)) {
+        firedAlarms.add(idx);
     }
 
-    // --- Core Editor Functions ---
-    function updatePreview() {
-        if (!aceEditor) return;
-        document.getElementById('previewFrame').src = 'data:text/html;charset=utf-8,' + encodeURIComponent(aceEditor.getValue());
+    if (stDist <= alarmDist && !firedAlarms.has(idx)) {
+      firedAlarms.add(idx);
+      
+      // Safety: Purana koi bhi interval chal raha ho toh pehle use khatam karo
+      if (alarmInterval) clearInterval(alarmInterval);
+      
+      showToast(`🔔 ${stations[idx].station} AA GAYA!`, 'alarm');
+      
+      const doVibrate = document.getElementById('pref-vibrate').checked;
+      const doBeep = document.getElementById('pref-beep').checked;
+      
+      const alarmUI = document.getElementById('active-alarm-ui');
+      alarmUI.style.display = 'block';
+      alarmUI.innerHTML = `<div style="font-weight: bold; font-size: 1.1rem;">🔔 ${stations[idx].station} AA GAYA!</div>
+                           <button onclick="stopAlarm()" style="margin-top:10px; background: #000; color: #fff; border:none; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">STOP ALARM</button>`;
+
+      alarmInterval = setInterval(() => {
+        if (doVibrate && 'vibrate' in navigator) navigator.vibrate([400, 200, 400]);
+        if (doBeep) playBeep();
+      }, 1500);
     }
-    
-    function saveCodeToLocalStorage() {
-        if (!aceEditor) return;
-        try {
-            localStorage.setItem('easyHtmlEditorCode', aceEditor.getValue());
-            // SYNC FIX: फ़ाइल का नाम भी सुरक्षित करें
-            localStorage.setItem('easyHtmlEditorFileName', originalFileName);
-        } catch (e) { console.warn("localStorage N/A"); }
+  });
+}
+
+// ── STATIONS LIST ─────────────────────────────────────────────────────────────
+function renderStationsList(nextIdx) {
+  if (nextIdx === undefined) nextIdx = -1;
+  const list = document.getElementById('stations-list');
+  list.innerHTML = '';
+  stations.forEach((s, i) => {
+    const isPassed = i < nextIdx;
+    const isNext = i === nextIdx;
+    const dist = userLat !== null ? haversine(userLat, userLon, s.lat, s.lon) : null;
+    const hasAlarm = alarms[i] !== undefined;
+
+    const row = document.createElement('div');
+    row.className = 'station-row' + (isPassed ? ' passed' : '') + (isNext ? ' current' : '');
+
+    let dotClass = 'upcoming';
+    if (isPassed) dotClass = 'passed';
+    else if (isNext) dotClass = 'next';
+    if (hasAlarm) dotClass = 'alarmed';
+
+    const distText = dist !== null ? `${(dist*1000).toFixed(0)} m` : '—';
+
+    row.innerHTML = `
+      <div class="station-dot ${dotClass}"></div>
+      <div class="station-info">
+        <div class="station-name">${s.station}</div>
+        <div class="station-dist">${distText}</div>
+      </div>
+      <button class="alarm-btn ${hasAlarm ? 'set' : ''}" onclick="openAlarmModal(${i})">
+        ${hasAlarm ? '🔔' : '🔕'}
+      </button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+// ── MINI MAP ──────────────────────────────────────────────────────────────────
+function drawMap(nextIdx) {
+  const canvas = document.getElementById('map-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = canvas.offsetWidth, H = canvas.offsetHeight;
+
+  const lats = stations.map(s => s.lat);
+  const lons = stations.map(s => s.lon);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const pad = 20;
+
+  const toX = lon => pad + (lon - minLon) / (maxLon - minLon) * (W - pad*2);
+  const toY = lat => H - pad - (lat - minLat) / (maxLat - minLat) * (H - pad*2);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Track line
+  ctx.beginPath();
+  stations.forEach((s, i) => {
+    i === 0 ? ctx.moveTo(toX(s.lon), toY(s.lat)) : ctx.lineTo(toX(s.lon), toY(s.lat));
+  });
+  ctx.strokeStyle = '#2a2f3e';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Traveled portion
+  if (nextIdx > 0 && userLat !== null) {
+    ctx.beginPath();
+    ctx.moveTo(toX(stations[0].lon), toY(stations[0].lat));
+    for (let i = 1; i < nextIdx; i++) ctx.lineTo(toX(stations[i].lon), toY(stations[i].lat));
+    ctx.lineTo(toX(userLon), toY(userLat));
+    ctx.strokeStyle = '#f5a623';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+
+  // Station dots
+  stations.forEach((s, i) => {
+    ctx.beginPath();
+    ctx.arc(toX(s.lon), toY(s.lat), i === nextIdx ? 5 : 3, 0, Math.PI*2);
+    if (i < nextIdx) ctx.fillStyle = '#f5a623';
+    else if (i === nextIdx) { ctx.fillStyle = '#fff'; ctx.shadowColor = '#f5a623'; ctx.shadowBlur = 8; }
+    else ctx.fillStyle = '#4a5068';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Label for next station
+    if (i === nextIdx) {
+      ctx.fillStyle = '#f5a623';
+      ctx.font = `bold 10px Rajdhani`;
+      ctx.fillText(s.station, toX(s.lon) + 7, toY(s.lat) + 4);
     }
-
-    function loadInitialCode(initialCodeFromHtml) {
-        let savedCode = null;
-        try { savedCode = localStorage.getItem('easyHtmlEditorCode'); } catch (e) {}
-        
-        if (savedCode) {
-            aceEditor.setValue(savedCode, -1);
-        } else if (initialCodeFromHtml && initialCodeFromHtml.trim() !== '') {
-            aceEditor.setValue(initialCodeFromHtml, -1);
-        } else {
-            const defaultCode = `<!DOCTYPE html>\n<html lang="hi">\n<head>\n<meta charset="UTF-8">\n<title>Website</title>\n</head>\n<body>\n<h1>Hello!</h1>\n</body>\n</html>`;
-            aceEditor.setValue(defaultCode, -1);
-        }
-    }
-
-    function updateUndoRedoButtons() {
-        if (!aceEditor) return;
-        const undoManager = aceEditor.session.getUndoManager();
-        
-        // SYNC FIX: फुटर और साइड पैनल दोनों के बटन्स को सही स्टेट में लाना
-        const canUndo = undoManager.hasUndo();
-        const canRedo = undoManager.hasRedo();
-
-        document.querySelectorAll('#undoBtnSP, #undoBtnFT').forEach(btn => {
-            btn.disabled = !canUndo;
-            // मोबाइल पर विज़ुअल फीडबैक के लिए ओपेसिटी (Opacity) सेट करना
-            btn.style.opacity = canUndo ? "1" : "0.4";
-        });
-
-        document.querySelectorAll('#redoBtnSP, #redoBtnFT').forEach(btn => {
-            btn.disabled = !canRedo;
-            btn.style.opacity = canRedo ? "1" : "0.4";
-        });
-    }
-
-    function undo() { 
-        if (aceEditor && aceEditor.session.getUndoManager().hasUndo()) {
-            aceEditor.undo();
-            // SYNC FIX: अगर कोई बदलाव वापस हुआ है, तो काउंटर कम करें
-            if (totalChanges > 0) updateChangeCounter(-1);
-            updateUndoRedoButtons(); // बटन्स की हालत तुरंत अपडेट करें
-        }
-    }
-    function redo() { 
-        if (aceEditor && aceEditor.session.getUndoManager().hasRedo()) {
-            aceEditor.redo();
-            // SYNC FIX: अगर कोई बदलाव वापस आया है, तो काउंटर बढ़ाएं
-            updateChangeCounter(1);
-            updateUndoRedoButtons(); // बटन्स की हालत तुरंत अपडेट करें
-        }
-    }
-
-    function clearAllMarks() {
-        currentMarkers.forEach(markerId => aceEditor.session.removeMarker(markerId));
-        currentMarkers = [];
-    }
-
-    function updateChangeCounter(count) {
-        totalChanges += count;
-        const counterElement = document.getElementById('changeCounter');
-        
-        if (totalChanges > 0) {
-            counterElement.innerHTML = `<i class="fas fa-magic"></i> ${totalChanges}`;
-            counterElement.style.display = 'inline-flex';
-            counterElement.classList.remove('bump');
-            void counterElement.offsetWidth; 
-            counterElement.classList.add('bump');
-        } else {
-            counterElement.style.display = 'none';
-        }
-        localStorage.setItem('editorTotalChanges', totalChanges);
-
-        if (originalFileName) {
-            let display = originalFileName;
-            if (totalChanges > 0) {
-                const lastDotIndex = originalFileName.lastIndexOf('.');
-                if (lastDotIndex !== -1) {
-                    const namePart = originalFileName.substring(0, lastDotIndex);
-                    const extPart = originalFileName.substring(lastDotIndex); 
-                    display = `${namePart}.${totalChanges}${extPart}`;
-                } else {
-                    display = `${originalFileName}.${totalChanges}`;
-                }
-            }
-            document.getElementById('fileNameSP').textContent = `फाइल: ${display}`;
-            const findLabelName = document.getElementById('uploadedFileName');
-            if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${display}`;
-        }
-    }
-
-    function resetChangeCounter() {
-        totalChanges = 0;
-        const counterElement = document.getElementById('changeCounter');
-        counterElement.style.display = 'none';
-        localStorage.setItem('editorTotalChanges', '0');
-    }
-    
-    function toggleSidePanel() {
-        sidePanel.classList.toggle('open');
-        body.classList.toggle('side-panel-open');
-        sidePanelOpen = sidePanel.classList.contains('open');
-    }
-    function showSection(sectionId) {
-        document.getElementById('editorSection').classList.toggle('active', sectionId === 'editor');
-        document.getElementById('previewSection').classList.toggle('active', sectionId === 'preview');
-        document.getElementById('editorTabBtn').classList.toggle('active', sectionId === 'editor');
-        document.getElementById('previewTabBtn').classList.toggle('active', sectionId === 'preview');
-        if (sectionId === 'editor' && aceEditor) aceEditor.resize();
-        if (sectionId === 'preview') updatePreview();
-    }
-    function toggleFullScreenPreview() { body.classList.toggle('fullscreen-preview'); }
-
-    function setPreviewDevice(device, btn) {
-        const frame = document.getElementById('previewFrame');
-        const buttons = document.querySelectorAll('.device-btn');
-        
-        // एक्टिव क्लास अपडेट करें
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        // डिवाइस के हिसाब से विड्थ सेट करें
-        if (device === 'mobile') frame.style.width = '360px';
-        else if (device === 'tablet') frame.style.width = '768px';
-        else frame.style.width = '100%';
-        
-        // फ्रेम को फिर से रेंडर करें
-        updatePreview();
-    }
-    
-    function clearInput(elementId) { 
-        document.getElementById(elementId).value = ''; 
-        
-        // SYNC FIX: अगर सर्च बॉक्स क्लियर हुआ है, तो एडिटर की 'गंदगी' भी साफ़ करें
-        if (elementId === 'findBlock') {
-            if (aceEditor) {
-                aceEditor.session.getSelection().clearSelection();
-                clearAllMarks(); // हाईलाइट्स हटाना
-            }
-            // काउंटर और नेविगेशन छिपाना
-            document.getElementById('matchCounter').textContent = '';
-            document.getElementById('findNavContainer').style.display = 'none';
-            document.getElementById('replaceAllBtn').style.display = 'none';
-        }
-    }
-
-    // AI का कचरा (```html, ```) साफ़ करने वाला फंक्शन
-    function cleanAIFormatting(textarea) {
-        let val = textarea.value;
-        // ये रेगुलर एक्सप्रेशन शुरू और आखिर से ```html या ``` को हटा देता है
-        const cleaned = val.replace(/^```[a-z]*\n?|```$/gi, '').trim();
-        if (val !== cleaned) {
-            textarea.value = cleaned;
-        }
-    }
-    
-    async function findAndSelectText() {
-        clearAllMarks(); 
-        
-        // AJ Fix: नई सर्च शुरू होते ही बटन्स को एकदम फ्रेश (Unpressed) कर दो
-        document.getElementById('findNextBtn').classList.remove('toggled');
-        document.getElementById('findPrevBtn').classList.remove('toggled');
-
-        const codeToFind = document.getElementById('findBlock').value;
-        const findNavContainer = document.getElementById('findNavContainer');
-        const replaceAllBtn = document.getElementById('replaceAllBtn');
-        
-        if (!codeToFind) {
-            showCustomAlert('खोजने के लिए बॉक्स में कुछ लिखें।');
-            return;
-        }
-
-        const matchesFound = aceEditor.findAll(codeToFind, { 
-            regExp: false, 
-            caseSensitive: false, 
-            wholeWord: false,
-            wrap: true,
-            preventScroll: false 
-        });
-    
-        if (matchesFound > 0) {
-            if (window.innerWidth <= 768) showSection('editor');
-            
-            // AJ Fix: स्टोर करें कि कितने मैच मिले और पहला इंडेक्स सेट करें
-            searchMatches = aceEditor.session.getSelection().getAllRanges();
-            currentMatchIndex = 0;
-
-            // अगर 1 से ज्यादा मैच हैं, तो पहले सुंदर पॉप-अप दिखाओ
-            if (matchesFound > 1) {
-                findNavContainer.style.display = 'none'; // पहले छुपा कर रखें
-                await showCustomAlert(`कुल ${matchesFound} मैच मिले हैं! अब आप एरो बटन्स से इन्हें चेक कर सकते हैं।`);
-                
-                // OK करने के बाद नेविगेशन दिखाओ (एनीमेशन CSS से खुद होगा)
-                findNavContainer.style.display = 'inline-flex';
-                replaceAllBtn.style.display = 'inline-flex';
-            } else {
-                findNavContainer.style.display = 'none';
-                replaceAllBtn.style.display = 'none';
-            }
-            
-            updateMatchDisplay();
-            focusCurrentMatch();
-        } else {
-            showCustomAlert('कोड नहीं मिला।');
-            findNavContainer.style.display = 'none';
-            replaceAllBtn.style.display = 'none';
-        }
-    }
-    
-    async function replaceCodeBlock() {
-        const codeToFind = document.getElementById('findBlock').value;
-        const newText = document.getElementById('replaceBlock').value;
-
-        // AJ Fix: Same code check
-        if (codeToFind === newText) {
-            showCustomAlert('पुराना और नया कोड बिल्कुल एक जैसा है, कुछ भी बदलने की ज़रूरत नहीं है।');
-            return;
-        }
-
-        const Range = ace.require('ace/range').Range;
-        const currentRange = aceEditor.getSelectionRange();
-        
-        if (!currentRange || aceEditor.selection.isEmpty()) {
-             showCustomAlert('पहले "खोजें" बटन दबाकर टेक्स्ट सिलेक्ट करें।');
-             return;
-        }
-
-        clearAllMarks();
-        const startRow = currentRange.start.row;
-        const startCol = currentRange.start.column;
-
-        aceEditor.replace(newText);
-        updateChangeCounter(1);
-
-        // SYNC FIX: रिप्लेसमेंट के बाद काउंटर को अपडेट करना (AJ Fix: Redeclaration removed)
-        if (codeToFind) {
-            const smartRegex = createSmartSearchRegex(codeToFind);
-            const remainingMatches = aceEditor.findAll(smartRegex, { regExp: true, caseSensitive: false });
-            updateMatchDisplay();
-            // अगर अब कोई मैच नहीं बचा तो नेविगेशन छिपा दें
-            if (remainingMatches <= 1) {
-                document.getElementById('findNavContainer').style.display = 'none';
-                document.getElementById('replaceAllBtn').style.display = 'none';
-            }
-        }
-
-        const endPos = aceEditor.getCursorPosition();
-        const newRange = new Range(startRow, startCol, endPos.row, endPos.column);
-        const markerId = aceEditor.session.addMarker(newRange, "green-marker", "text");
-        currentMarkers.push(markerId);
-    }
-
-    function showToast(message) {
-        let container = document.getElementById('toast-container');
-        if (!container) {
-            container = document.createElement('div');
-            container.id = 'toast-container';
-            container.className = 'toast-container';
-            document.body.appendChild(container);
-        }
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.innerHTML = `<i class="fas fa-check-circle" style="color: var(--accent-success-color)"></i> ${message}`;
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.classList.add('fade-out');
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    }
-
-    async function replaceAllCode() {
-        const codeToFind = document.getElementById('findBlock').value;
-        const codeToReplace = document.getElementById('replaceBlock').value;
-
-        // AJ Fix: Same code check
-        if (codeToFind === codeToReplace) {
-            showCustomAlert('पुराना और नया कोड बिल्कुल एक जैसा है, कुछ भी बदलने की ज़रूरत नहीं है।');
-            return;
-        }
-
-        const smartRegex = createSmartSearchRegex(codeToFind);
-
-        const matchesFound = aceEditor.findAll(smartRegex, { regExp: true });
-        if (matchesFound > 0) {
-            aceEditor.replaceAll(codeToReplace);
-            updateChangeCounter(1);
-            
-            // SYNC FIX: सारे मैच खत्म होने पर काउंटर साफ़ करना
-            document.getElementById('matchCounter').textContent = '';
-            document.getElementById('findNavContainer').style.display = 'none';
-            document.getElementById('replaceAllBtn').style.display = 'none';
-            
-            showToast(`${matchesFound} बदलाव सफलतापूर्वक किए गए!`);
-        } else {
-            showToast('खोजने के लिए कुछ नहीं मिला।');
-        }
-    }
-
-    function findNext() { 
-        if (searchMatches.length === 0) return;
-        currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
-        aceEditor.selection.setRange(searchMatches[currentMatchIndex]);
-        
-        const nextBtn = document.getElementById('findNextBtn');
-        const prevBtn = document.getElementById('findPrevBtn');
-
-        // AJ Fix: अगर वापस पहली पोजीशन (0) पर आ गए तो दोनों रिसेट करो
-        if (currentMatchIndex === 0) {
-            nextBtn.classList.remove('toggled');
-            prevBtn.classList.remove('toggled');
-        } else {
-            nextBtn.classList.add('toggled');
-            prevBtn.classList.remove('toggled');
-        }
-        
-        updateMatchDisplay();
-        focusCurrentMatch();
-    }
-    function findPrev() { 
-        if (searchMatches.length === 0) return;
-        currentMatchIndex = (currentMatchIndex - 1 + searchMatches.length) % searchMatches.length;
-        aceEditor.selection.setRange(searchMatches[currentMatchIndex]);
-        
-        const nextBtn = document.getElementById('findNextBtn');
-        const prevBtn = document.getElementById('findPrevBtn');
-
-        // AJ Fix: अगर वापस पहली पोजीशन (0) पर आ गए तो दोनों रिसेट करो
-        if (currentMatchIndex === 0) {
-            nextBtn.classList.remove('toggled');
-            prevBtn.classList.remove('toggled');
-        } else {
-            prevBtn.classList.add('toggled');
-            nextBtn.classList.remove('toggled');
-        }
-        
-        updateMatchDisplay();
-        focusCurrentMatch();
-    }
-
-    // AJ Fix: मैच काउंटर अब ग्लोबल लिस्ट से चलेगा
-    function updateMatchDisplay() {
-        const total = searchMatches.length;
-        const current = currentMatchIndex + 1;
-        const counter = document.getElementById('matchCounter');
-        
-        if (total > 0) {
-            counter.textContent = `${current} of ${total}`;
-            counter.style.color = 'var(--accent-warning-color)';
-        } else {
-            counter.textContent = '';
-        }
-    }
-
-    // करंट मैच पर ग्लो और सेंटर फोकस करने के लिए
-    function focusCurrentMatch() {
-        const range = aceEditor.getSelectionRange();
-        if (range) {
-            aceEditor.scrollToLine(range.start.row, true, true, function() {});
-            // एक अस्थायी ग्लो मार्कर जोड़ना
-            const markerId = aceEditor.session.addMarker(range, "current-match-glow", "text");
-            setTimeout(() => {
-                aceEditor.session.removeMarker(markerId);
-            }, 1500);
-        }
-    }
-
-    function uploadFile() { document.getElementById('fileInput').click(); }
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                showSection('editor'); 
-                aceEditor.setValue(e.target.result, -1);
-                originalFileName = file.name;
-                document.getElementById('fileNameSP').textContent = `फाइल: ${file.name}`;
-                const findLabelName = document.getElementById('uploadedFileName');
-                if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${file.name}`;
-                resetChangeCounter();
-                setTimeout(() => { aceEditor.resize(); }, 100); 
-            };
-            reader.readAsText(file);
-        }
-    }
-
-    async function clearEditor() {
-        const confirmed = await showCustomConfirm('क्या आप वाकई एडिटर को पूरी तरह साफ करना चाहते हैं?');
-        if (confirmed) { 
-            // AJ Fix: Hard clear for Ace Editor
-            aceEditor.setValue("", -1); 
-            aceEditor.session.getUndoManager().reset();
-            resetChangeCounter();
-            saveCodeToLocalStorage();
-            updatePreview();
-            document.getElementById('fileNameSP').textContent = 'फाइल: index.html';
-            showToast("एडिटर साफ़ कर दिया गया! 🗑️");
-        }
-    }
-
-    function downloadFile() {
-        const currentName = document.getElementById('fileNameSP').textContent.replace('फाइल: ', '').trim() || 'index.html';
-        const inputField = document.getElementById('renameInput');
-        inputField.value = currentName;
-        document.getElementById('renameModal').style.display = 'flex';
-        setTimeout(() => { inputField.focus(); inputField.select(); }, 100);
-    }
-
-    function closeRenameModal() { document.getElementById('renameModal').style.display = 'none'; }
-
-    function confirmDownload() {
-        let fileName = document.getElementById('renameInput').value.trim();
-        if (!fileName) fileName = 'index.html';
-        if (!fileName.includes('.')) fileName += '.html';
-
-        // SYNC FIX: डाउनलोड के बाद नए नाम को 'Master Name' बनायें ताकि वर्जनिंग सही रहे
-        originalFileName = fileName;
-        updateChangeCounter(0); 
-        saveCodeToLocalStorage(); // नया नाम लोकल स्टोरेज में भी अपडेट करें
-
-        const blob = new Blob([aceEditor.getValue()], { type: 'text/html' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-        closeRenameModal();
-        document.getElementById('fileNameSP').textContent = `फाइल: ${fileName}`;
-    }
-
-    document.getElementById('renameInput').addEventListener('keyup', function(event) {
-        if (event.key === 'Enter') confirmDownload();
-    });
-
-    function openPreview() {
-        try {
-            const newWindow = window.open();
-            newWindow.document.write(aceEditor.getValue());
-            newWindow.document.close();
-        } catch (e) { showCustomAlert('पॉप-अप ब्लॉक हो गया!'); }
-    }
-
-    function copyAllCode() {
-        if (!aceEditor) return;
-        const code = aceEditor.getValue();
-        const btn = document.getElementById('copyBtn');
-        const icon = btn.querySelector('i');
-
-        // UI Feedback फंक्शन (ताकि यूजर को पता चले काम हो गया)
-        const showSuccess = () => {
-            const originalClass = icon.className;
-            icon.className = 'fas fa-check'; 
-            btn.style.color = 'var(--accent-success-color)';
-            btn.style.borderColor = 'var(--accent-success-color)';
-            showToast('कोड कॉपी हो गया! 📋'); // Toast भी दिखाएगा
-            
-            setTimeout(() => {
-                icon.className = 'fas fa-copy';
-                btn.style.color = '';
-                btn.style.borderColor = '';
-            }, 2000);
-        };
-
-        // Fallback तरीका (पुराने ब्राउज़र या Local File के लिए)
-        const fallbackCopy = (text) => {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed"; // स्क्रीन से बाहर न जाए
-            textArea.style.left = "-9999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) showSuccess();
-                else showToast('कॉपी फेल हो गया!');
-            } catch (err) {
-                showToast('कॉपी नहीं हो पाया!');
-            }
-            document.body.removeChild(textArea);
-        };
-
-        // पहले मॉडर्न API ट्राई करो, अगर फेल हो तो Fallback यूज़ करो
-        if (!navigator.clipboard) {
-            fallbackCopy(code);
-            return;
-        }
-        navigator.clipboard.writeText(code).then(
-            function() { showSuccess(); }, 
-            function(err) { fallbackCopy(code); }
-        );
-    }
-
-    function insertSymbol(symbol) {
-        if (aceEditor) {
-            aceEditor.insert(symbol);
-            aceEditor.focus();
-            // छोटा वाइब्रेशन फील देने के लिए (अगर मोबाइल सपोर्ट करे)
-            if (navigator.vibrate) navigator.vibrate(10);
-        }
-    }
-
-    // Auto-Tag Close removed for stability
-
-    function beautifyCode() {
-        if (!aceEditor) return;
-        const currentCode = aceEditor.getValue();
-        // Configuration for professional look
-        const formattedCode = html_beautify(currentCode, {
-            indent_size: 4,
-            indent_char: ' ',
-            max_preserve_newlines: 2,
-            preserve_newlines: true,
-            indent_inner_html: true,
-            brace_style: 'collapse',
-            indent_scripts: 'normal',
-            wrap_line_length: 0
-        });
-        aceEditor.setValue(formattedCode, -1);
-        showToast("कोड जादुई तरीके से संवर गया! ✨");
-    }
-    
-    function toggleToolbar() {
-        document.body.classList.toggle('toolbar-collapsed');
-    }
-
-    // --- Init ---
-    window.addEventListener('DOMContentLoaded', () => {
-        const editorDiv = document.getElementById('codeEditor');
-        const initialContent = editorDiv.textContent;
-        aceEditor = ace.edit(editorDiv);
-        ace.require("ace/ext/language_tools");
-        aceEditor.setOptions({
-            mode: "ace/mode/html",
-            selectionStyle: "text",
-            wrap: true,
-            enableMobileMenu: false,
-            enableBasicAutocompletion: true,
-            enableLiveAutocompletion: true,
-            fontSize: "14px",
-            fontFamily: 'Monaco, Menlo, monospace',
-            showPrintMargin: false,
-            highlightActiveLine: true,
-            cursorStyle: "smooth",
-            behavioursEnabled: true,
-            animatedScroll: true,
-            displayIndentGuides: true
-        });
-        
-        const savedMode = localStorage.getItem('editorThemeMode') || 'dark';
-        setLightDark(savedMode);
-        
-        const savedColor = localStorage.getItem('editorAccentColor') || '#007aff';
-        const savedHoverColor = localStorage.getItem('editorAccentHoverColor') || '#005ecb';
-        document.documentElement.style.setProperty('--accent-color', savedColor);
-        document.documentElement.style.setProperty('--accent-hover-color', savedHoverColor);
-        document.querySelectorAll('.color-swatch').forEach(sw => {
-            sw.classList.toggle('active', sw.getAttribute('data-color') === savedColor);
-        });
-        
-        loadInitialCode(initialContent); 
-        aceEditor.session.getUndoManager().reset();
-        updateUndoRedoButtons();
-        updatePreview();
-
-        aceEditor.session.on('change', () => {
-            updatePreview();
-            saveCodeToLocalStorage();
-            updateUndoRedoButtons();
-
-            // SYNC FIX: अगर यूजर ने खुद कुछ बदला है, तो पुराना सर्च रिजल्ट हटा दें
-            if (document.getElementById('matchCounter').textContent !== '') {
-                // सिर्फ हाईलाइट्स और UI साफ़ करें, कर्सर न हिलाएं
-                clearAllMarks();
-                document.getElementById('matchCounter').textContent = '';
-                document.getElementById('findNavContainer').style.display = 'none';
-                document.getElementById('replaceAllBtn').style.display = 'none';
-            }
-        });
-
-        // SYNC FIX: सेव किया हुआ फ़ाइल नाम वापस लाएं
-        const savedFileName = localStorage.getItem('easyHtmlEditorFileName');
-        if (savedFileName) originalFileName = savedFileName;
-
-        const savedChanges = parseInt(localStorage.getItem('editorTotalChanges') || '0');
-        if (savedChanges > 0) {
-            totalChanges = savedChanges;
-            // नाम और काउंटर दोनों को लेबल में सिंक करने के लिए
-            updateChangeCounter(0);
-        } else {
-            // अगर कोई बदलाव नहीं है, तो भी फ़ाइल का नाम तो दिखाना ही है
-            document.getElementById('fileNameSP').textContent = `फाइल: ${originalFileName}`;
-            const findLabelName = document.getElementById('uploadedFileName');
-            if(findLabelName) findLabelName.innerHTML = `<i class="fas fa-file-code"></i> ${originalFileName}`;
-        }
-
-        if (window.innerWidth <= 768) { showSection('editor'); }
-    });
-
-
-    // सर्च कोड को फ्लेक्सिबल बनाने वाला फंक्शन
-   function createSmartSearchRegex(str) {
-        if (!str) return "";
-        // अब कोई 'Smart' काम नहीं होगा, सिर्फ Exact Match के लिए स्ट्रिंग वापस भेजेंगे
-        return str;
-    }
-    
-    // मोबाइल कीबोर्ड और लेआउट सिंक लॉजिक (Pixel-Perfect Version)
-    window.addEventListener('load', () => {
-        if (window.visualViewport) {
-            const vpv = window.visualViewport;
-            const initialHeight = vpv.height;
-            
-            vpv.addEventListener('resize', () => {
-                const isMobile = window.innerWidth <= 768;
-                if (!isMobile) return;
-
-                // कीबोर्ड डिटेक्शन (अगर हाइट 15% से ज़्यादा कम हो)
-                if (vpv.height < initialHeight * 0.85) {
-                    document.body.classList.add('keyboard-open');
-                } else {
-                    document.body.classList.remove('keyboard-open');
-                }
-
-                // एडिटर को नई हाइट के हिसाब से तुरंत एडजस्ट करना
-                if (aceEditor) {
-                    // छोटा सा डिले ताकि ब्राउज़र कीबोर्ड एनीमेशन पूरा कर ले
-                    setTimeout(() => {
-                        aceEditor.resize();
-                        aceEditor.renderer.updateFull();
-                        // कर्सर को व्यू में रखना
-                        aceEditor.renderer.scrollCursorIntoView();
-                    }, 150);
-                }
-            });
-        }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (sidePanelOpen) return;
-        if (e.ctrlKey || e.metaKey) {
-            if (e.key === 's') { e.preventDefault(); downloadFile(); }
-        }
-        if (e.key === 'Escape' && sidePanelOpen) toggleSidePanel();
-    });
-
-    document.addEventListener('click', (event) => {
-        if (sidePanel.classList.contains('open') && !sidePanel.contains(event.target) && !hamburgerMenu.contains(event.target)) {
-            toggleSidePanel();
-        }
-    });
-    </script>
-
-    <style>
-        /* --- AI Magic Panel Styles v1.15 (Glassmorphic) --- */
-        .magic-panel-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            z-index: 9999; display: none; flex-direction: column; padding: 15px;
-            color: #e0e0e0; font-family: 'Segoe UI', sans-serif;
-        }
-        body.light-theme .magic-panel-overlay { background: rgba(255, 255, 255, 0.85); color: #222; }
-        
-        .magic-header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 15px; padding-bottom: 10px; 
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .magic-header h2 { 
-            font-size: 18px; font-weight: 800;
-            background: linear-gradient(90deg, var(--accent-color), #af52de);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        }
-        
-        /* Auto-Collapse Logic for Input */
-        #aiRawInput {
-            width: 100%; height: 160px; background: rgba(0,0,0,0.4); 
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 14px; color: #fff; padding: 12px; font-size: 13px; 
-            resize: none; outline: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
-        }
-        #aiRawInput.collapsed { height: 45px; opacity: 0.6; cursor: pointer; overflow: hidden; }
-        #aiRawInput.collapsed:hover { opacity: 1; }
-        body.light-theme #aiRawInput { background: rgba(255,255,255,0.8); color: #333; border-color: #ddd; }
-
-.magic-actions-grid { 
-            display: grid; grid-template-columns: 1fr 50px 50px; gap: 10px; margin: 15px 0; 
-        }
-
-        /* AJ: Summary Box and Pills Styling */
-        .magic-summary-area {
-            background: rgba(255, 255, 255, 0.05); border-radius: 14px;
-            padding: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.08);
-            display: none; flex-direction: column; align-items: center; gap: 10px;
-        }
-        body.light-theme .magic-summary-area { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.1); }
-
-        .summary-stats { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent-success-color); }
-
-        .pill-container { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-        .block-pill {
-            padding: 4px 10px; border-radius: 50px; font-size: 10px; font-weight: 700;
-            cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1);
-            display: flex; align-items: center; gap: 4px; color: white;
-        }
-        .block-pill.matched { background: rgba(48, 209, 88, 0.2); border-color: var(--accent-success-color); color: var(--accent-success-color); }
-        .block-pill.missing { background: rgba(255, 69, 58, 0.2); border-color: var(--accent-danger-color); color: var(--accent-danger-color); }
-        .block-pill:hover { transform: scale(1.1); filter: brightness(1.2); }
-
-        /* Results Area Scroll */
-        #magicResultsScroll {
-            flex: 1; overflow-y: auto; padding-right: 5px; 
-            padding-bottom: 100px; /* एक्स्ट्रा स्पेस ताकि कार्ड्स नीचे न छुपें */
-        }
-
-        /* Floating Footer Action - Modern Glassy Bar */
-        .magic-footer-actions {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            display: flex; gap: 12px; z-index: 100;
-            padding: 15px 20px 25px 20px;
-            background: rgba(20, 20, 20, 0.5);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border-top: 1px solid rgba(255,255,255,0.08);
-        }
-        body.light-theme .magic-footer-actions {
-            background: rgba(245, 245, 245, 0.8);
-            border-top: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-        }
-
-        .btn-magic-pills {
-            padding: 12px 15px; border-radius: 14px; border: none; cursor: pointer;
-            font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: white;
-        }
-        /* Dummy Button State */
-        .btn-magic-pills.dummy {
-            background: rgba(100, 100, 100, 0.2) !important;
-            color: rgba(255, 255, 255, 0.3) !important;
-            border: 1px solid rgba(255, 255, 255, 0.05) !important;
-            box-shadow: none !important;
-            cursor: default;
-            pointer-events: none;
-        }
-        /* Success Screen Styling */
-        .magic-success-screen {
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 40px 20px; flex: 1;
-            animation: cardEntrance 0.6s ease-out;
-        }
-        .success-icon-circle {
-            width: 80px; height: 80px; background: rgba(48, 209, 88, 0.1);
-            border: 2px solid var(--accent-success-color); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 35px; color: var(--accent-success-color); margin-bottom: 20px;
-            box-shadow: 0 0 30px rgba(48, 209, 88, 0.2);
-        }
-        
-        /* Report Button Contrast Fix */
-        #btnTogglePreview {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-color);
-        }
-        body.light-theme #btnTogglePreview {
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            color: #111 !important; /* एकदम डार्क टेक्स्ट */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        body.light-theme #btnTogglePreview i { color: #111 !important; }
-        #btnTogglePreview:hover { filter: brightness(1.2); }
-        
-        /* AJ Slim Card Analysis Style - v1.13 Updated */
-        .analysis-container { width: 100%; margin-top: 10px; display: none; }
-        .analysis-list { display: flex; flex-direction: column; gap: 8px; }
-        .update-card { 
-            background: rgba(255,255,255,0.03); border-radius: 14px; 
-            padding: 12px; border-left: 4px solid #555; position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            /* Entrance Animation */
-            opacity: 0; transform: translateY(25px);
-            animation: cardEntrance 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
-        }
-        @keyframes cardEntrance {
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .magic-fade-out {
-            opacity: 0 !important;
-            transform: translate(-50%, -60%) scale(0.9) !important;
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-        }
-        /* AJ Premium Floating Overlay */
-        #magicSuccessScreen {
-            backdrop-filter: blur(20px) brightness(1.2);
-            -webkit-backdrop-filter: blur(20px) brightness(1.2);
-            border: 1.5px solid rgba(48, 209, 88, 0.4) !important;
-            box-shadow: 0 30px 100px rgba(0,0,0,0.9), 0 0 40px rgba(48, 209, 88, 0.1) !important;
-        }
-        body.light-theme .update-card { background: rgba(0,0,0,0.04); border-color: #ccc; }
-        
-        /* Navigation Line Contrast Fix for Light Mode */
-        body.light-theme [id^="nav-line-"] { 
-            color: #0056b3 !important; /* Deep Blue for visibility */
-            font-weight: 800; opacity: 1 !important; 
-        }
-        body.light-theme .block-num { color: #555; font-weight: 900; }
-        .update-card.matched { border-left-color: var(--accent-success-color); background: rgba(48, 209, 88, 0.05); }
-        .update-card.missing { border-left-color: var(--accent-danger-color); background: rgba(255, 69, 58, 0.05); }
-        .update-card.conflict { border-left-color: var(--accent-warning-color); background: rgba(255, 159, 10, 0.05); }
-        
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .block-num { font-size: 10px; font-weight: 800; color: var(--text-muted-color); text-transform: uppercase; }
-        .status-mini { font-size: 10px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        
-        .btn-copy-card {
-            background: rgba(255,255,255,0.05); border: none; color: var(--text-muted-color);
-            width: 26px; height: 26px; border-radius: 6px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: 0.2s;
-        }
-        .btn-copy-card:hover { background: var(--accent-color); color: white; transform: scale(1.1); }
-        body.light-theme .btn-copy-card { background: rgba(0,0,0,0.05); }
-
-        /* Navigation Controls inside Card */
-        .card-nav-controls { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); }
-        .nav-btn-sm { 
-            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); 
-            color: white; width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 12px;
-            transition: 0.2s;
-        }
-        body.light-theme .nav-btn-sm { 
-            background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.1); 
-            color: #333; /* लाइट मोड में काला रंग */
-        }
-        .nav-btn-sm:hover { background: var(--accent-color); color: white !important; }
-        .apply-btn-sm { 
-            background: var(--accent-success-color); border: none; color: white; 
-            padding: 0 12px; height: 28px; border-radius: 6px; cursor: pointer;
-            font-size: 11px; font-weight: bold; flex: 1;
-        }
-
-        .code-label { font-size: 8px; color: var(--accent-color); opacity: 0.8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .code-box-mini { 
-            background: #0a0a0a; padding: 10px; border-radius: 10px; 
-            font-size: 9px; font-family: 'Monaco', 'Menlo', monospace; white-space: pre-wrap; 
-            word-break: normal; line-height: 1.4; 
-            border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-            max-height: 120px; overflow-y: auto; position: relative;
-            transition: 0.3s;
-            scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent;
-        }
-        .code-box-mini::-webkit-scrollbar { width: 3px; }
-        .code-box-mini::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 10px; }
-        body.light-theme .code-box-mini { 
-            background: rgba(0,0,0,0.05); color: #111; 
-            border: 1px solid rgba(0,0,0,0.1); box-shadow: none; 
-        }
-        .card-matched-icon { color: var(--accent-success-color); font-size: 10px; }
-        .card-missing-icon { color: var(--accent-danger-color); font-size: 10px; }
-        
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; text-transform: uppercase; }
-        .status-match { background: #30d158; color: #fff; }
-        .status-missing { background: #ff453a; color: #fff; }
-        
-        .code-preview-box { 
-            background: #000; color: #0f0; padding: 8px; border-radius: 4px; 
-            max-height: 100px; overflow-y: auto; white-space: pre-wrap; font-family: 'Monaco', monospace;
-            border: 1px solid #333; opacity: 0.8;
-        }
-        body.light-theme .code-preview-box { background: #f8f8f8; color: #d11141; border-color: #ddd; }
-
-        .btn-magic-main { background: var(--accent-color); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; flex: 1; }
-        .btn-close-magic { 
-            background: var(--accent-color); color: white; border: none; 
-            width: 38px; height: 38px; border-radius: 12px; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.3s;
-            z-index: 10001;
-        }
-        .btn-close-magic:hover { transform: scale(1.1); filter: brightness(1.2); }
-        .btn-close-magic i { font-size: 18px; color: white !important; }
-    </style>
-
-    <div id="magicPanel" class="magic-panel-overlay">
-        <div class="magic-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-wand-magic-sparkles" style="color: var(--accent-color); font-size: 18px;"></i>
-                <h2 style="margin:0;">Magic Update Panel</h2>
-            </div>
-            <button type="button" class="btn-close-magic" onclick="closeMagicPanel()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 10px;">
-                <i class="fas fa-times" style="font-size: 14px; color: var(--text-color) !important;"></i>
-            </button>
-        </div>
-        
-        <div id="magicInputContainer">
-            <textarea id="aiRawInput" placeholder="AJ का मैसेज यहाँ पेस्ट करें..." onclick="this.classList.remove('collapsed')"></textarea>
-            
-            <div class="magic-actions-grid" style="grid-template-columns: 1fr 50px;">
-                <button class="btn-magic-pills" onclick="scanAIUpdate()" style="background: var(--accent-color); box-shadow: 0 4px 15px rgba(0, 122, 255, 0.3);">
-                    <i class="fas fa-bolt"></i> Scan AI Message
-                </button>
-                <button class="btn-magic-pills" onclick="resetMagicPanel()" style="background: #333; border: 1px solid #444;">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>
-
-            <div id="magicSummaryArea" class="magic-summary-area">
-                <div id="summaryStats" class="summary-stats"></div>
-                <div id="pillContainer" class="pill-container"></div>
-            </div>
-        </div>
-
-        <div id="magicResultsScroll">
-            <!-- Success Message Screen -->
-            <div id="magicSuccessScreen" class="magic-success-screen">
-                <div class="success-icon-circle">
-                    <i class="fas fa-check"></i>
-                </div>
-                <h3 style="color: var(--accent-success-color); margin-bottom: 10px;">बदलाव सफल रहा!</h3>
-                <p id="successMessageDetail" style="font-size: 14px; opacity: 0.8; margin-bottom: 25px;"></p>
-                <button class="btn-magic-pills" onclick="resetMagicPanel(true)" style="background: var(--accent-color); width: 160px;">
-                    <i class="fas fa-redo"></i> Scan Again
-                </button>
-            </div>
-
-            <div class="analysis-container" id="analysisContainer">
-                <div style="margin: 15px 0 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                    <div style="font-weight: 800; color: var(--accent-warning-color); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 20px; height: 1px; background: var(--accent-warning-color); opacity: 0.3;"></div>
-                        <i class="fas fa-robot"></i> Analysis Report
-                    </div>
-                    <button class="btn-icon" onclick="exportAnalysisJSON()" title="Export Analysis JSON" style="background: rgba(255, 159, 10, 0.1); border: 1px solid rgba(255, 159, 10, 0.3); color: var(--accent-warning-color); padding: 4px 8px; border-radius: 6px; font-size: 11px;">
-                        <i class="fas fa-file-export"></i> JSON
-                    </button>
-                </div>
-                <div id="analysisList" class="analysis-list">
-                    <!-- Cards will appear here -->
-                </div>
-            </div>
-        </div>
-
-        <div class="magic-footer-actions" id="magicFooter" style="display: none;">
-             <button class="btn-magic-pills" id="btnTogglePreview" onclick="togglePreviewReport()" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); flex: 1;">
-                 <i class="fas fa-eye"></i> Show Report
-             </button>
-             <button class="btn-magic-pills" id="btnApplyAll" onclick="applyAllAIChanges()" style="background: linear-gradient(135deg, #30d158, #28b049); flex: 2; box-shadow: 0 4px 20px rgba(48, 209, 88, 0.4);">
-                 <i class="fas fa-check-double"></i> Apply All Changes
-             </button>
-        </div>
-    </div>
-
-    <script>
-        function openMagicPanel() { 
-            const panel = document.getElementById('magicPanel');
-            panel.style.display = 'flex'; 
-            document.body.style.overflow = 'hidden';
-            
-            // AJ: रिफ्रेश के बाद बचा हुआ डेटा लोड करना
-            const savedData = localStorage.getItem('ajMagicData');
-            if (savedData) {
-                document.getElementById('aiRawInput').value = savedData;
-            }
-        }
-        
-        function closeMagicPanel() { 
-            document.getElementById('magicPanel').style.display = 'none'; 
-            document.body.style.overflow = 'auto'; 
-        }
-
-        // AJ: डेटा को टाइप करते ही सेव करना (Persistence)
-        document.getElementById('aiRawInput').addEventListener('input', (e) => {
-            localStorage.setItem('ajMagicData', e.target.value);
-        });
-
-        function resetMagicPanel() {
-            if(confirm("Bhai ji, क्या आप पेस्ट किया हुआ डेटा साफ़ करना चाहते हैं?")) {
-                document.getElementById('aiRawInput').value = '';
-                localStorage.removeItem('ajMagicData'); // मेमोरी से भी साफ़
-                document.getElementById('analysisContainer').style.display = 'none';
-                document.getElementById('btnApplyAll').style.display = 'none';
-                document.getElementById('btnTogglePreview').style.display = 'none';
-                extractedUpdates = [];
-            }
-        }
-        async function resetMagicPanel(isScanAgain = false) {
-            // AJ: Using our Premium Custom Modal instead of old browser alert
-            const msg = isScanAgain ? "क्या आप नया डेटा स्कैन करने के लिए तैयार हैं?" : "Bhai ji, क्या आप पेस्ट किया हुआ डेटा साफ़ करके फिर से शुरुआत करना चाहते हैं?";
-            const confirmed = await showCustomConfirm(msg);
-
-            if (confirmed) {
-                // Clear Input
-                document.getElementById('aiRawInput').value = '';
-                localStorage.removeItem('ajMagicData');
-
-                // AJ Fix v1.29: Restore UI States
-                document.getElementById('magicInputContainer').style.display = 'block';
-                document.getElementById('magicInputContainer').style.opacity = '1';
-                document.getElementById('magicInputContainer').style.pointerEvents = 'auto';
-                document.getElementById('magicSummaryArea').style.display = 'none';
-                document.getElementById('analysisContainer').style.display = 'none';
-                document.getElementById('analysisContainer').style.opacity = '1';
-                document.getElementById('magicSuccessScreen').style.display = 'none';
-                document.getElementById('magicFooter').style.display = 'none';
-
-                // Reset Button States and Names
-                const applyBtn = document.getElementById('btnApplyAll');
-                applyBtn.classList.remove('dummy');
-                applyBtn.innerHTML = `<i class="fas fa-check-double"></i> Apply All Changes`;
-
-                const viewBtn = document.getElementById('btnTogglePreview');
-                viewBtn.innerHTML = `<i class="fas fa-eye"></i> View Report`;
-
-                // Reset Logic Data
-                extractedUpdates = [];
-                
-                showToast("Magic Panel साफ़ हो गया! ✨");
-            }
-        }
-        function togglePreviewReport() {
-            const container = document.getElementById('analysisContainer');
-            const btn = document.getElementById('btnTogglePreview');
-            if (container.style.display === 'none' || container.style.display === '') {
-                container.style.display = 'block';
-                btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Report';
-            } else {
-                container.style.display = 'none';
-                btn.innerHTML = '<i class="fas fa-eye"></i> View Report';
-            }
-        }
-
-        let extractedUpdates = [];
-
-        // AJ Helper: कोड की फालतू खाली जगह (Indentation) साफ़ करने के लिए
-        function cleanIndentation(str) {
-            if(!str) return "";
-            const lines = str.split('\n');
-            const minIndent = lines.filter(l => l.trim()).reduce((acc, line) => {
-                const indent = line.match(/^\s*/)[0].length;
-                return indent < acc ? indent : acc;
-            }, Infinity);
-            return lines.map(l => l.slice(minIndent === Infinity ? 0 : minIndent)).join('\n').trim();
-        }
-
-        function scanAIUpdate() {
-            // AJ Fix: Reset UI state for new scan
-            const statusCard = document.getElementById('persistentStatusCard');
-            if(statusCard) statusCard.style.display = 'none';
-
-            const successScreen = document.getElementById('magicSuccessScreen');
-            successScreen.style.display = 'none';
-            successScreen.classList.remove('magic-fade-out');
-            document.getElementById('magicInputContainer').style.opacity = '1';
-            document.getElementById('magicInputContainer').style.pointerEvents = 'auto';
-            document.getElementById('analysisContainer').style.opacity = '1';
-
-            const rawText = document.getElementById('aiRawInput').value;
-            const analysisContainer = document.getElementById('analysisContainer');
-            const btnApplyAll = document.getElementById('btnApplyAll');
-            const currentCode = aceEditor.getValue();
-
-            if (!rawText.trim()) {
-                showToast("भाई जी, पहले कुछ पेस्ट तो करो!");
-                return;
-            }
-
-            const analysisList = document.getElementById('analysisList');
-            analysisList.innerHTML = '';
-            extractedUpdates = [];
-
-            const searchRegex = /Search वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css|python|py)?\n([\s\S]*?)\n```[\s\S]{0,400}?Replace वाले बॉक्स में ये डालें:[\s\S]{0,250}?```(?:html|javascript|js|css|python|py)?\n([\s\S]*?)\n```/g;
-            
-            let match;
-            let count = 0;
-            let totalBlocksWithMatches = 0;
-
-            while ((match = searchRegex.exec(rawText)) !== null) {
-                count++;
-                let sCodeRaw = match[1].replace(/\r/g, "");
-                let rCodeRaw = match[2].replace(/\r/g, "");
-                
-                let sCode = sCodeRaw.trim();
-                let rCode = rCodeRaw.trim();
-
-                // फाइंड ऑल रेंजेस (Ace Editor Logic)
-                const ranges = [];
-                let searchIndex = 0;
-                while (true) {
-                    let foundIndex = currentCode.indexOf(sCode, searchIndex);
-                    if (foundIndex === -1) break;
-                    
-                    // कन्वर्ट इंडेक्स टू रो/कॉलम
-                    const linesBefore = currentCode.substring(0, foundIndex).split('\n');
-                    const startRow = linesBefore.length - 1;
-                    const startCol = linesBefore[startRow].length;
-                    
-                    const codeLines = sCode.split('\n');
-                    const endRow = startRow + codeLines.length - 1;
-                    const endCol = (codeLines.length > 1) ? codeLines[codeLines.length-1].length : startCol + sCode.length;
-
-                    const Range = ace.require('ace/range').Range;
-                    ranges.push(new Range(startRow, startCol, endRow, endCol));
-                    searchIndex = foundIndex + sCode.length;
-                }
-
-                const matchCount = ranges.length;
-                if(matchCount > 0) totalBlocksWithMatches++;
-
-                const statusClass = matchCount === 0 ? 'missing' : (matchCount > 1 ? 'conflict' : 'matched');
-                const statusText = matchCount === 0 ? 'MISSING' : (matchCount > 1 ? `${matchCount} MATCHES` : 'READY');
-
-                extractedUpdates.push({ 
-                    search: sCode, 
-                    replace: rCode, 
-                    ranges: ranges, 
-                    currentIdx: 0,
-                    id: count - 1
-                });
-
-                const card = document.createElement('div');
-                card.className = `update-card ${statusClass}`;
-                card.id = `card-${count-1}`;
-                // AJ: Staggered animation delay based on index
-                card.style.animationDelay = `${(count - 1) * 0.08}s`;
-                
-                // AJ: पहली मैच वाली लाइन नंबर निकालना
-                const firstLine = ranges.length > 0 ? (ranges[0].start.row + 1) : 0;
-
-                card.innerHTML = `
-                    <div class="card-header">
-                        <span class="block-num">Block ${count}</span>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <button class="btn-copy-card" onclick="copyBlockToClipboard(${count-1})" title="Copy Search Code">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                            <span class="status-mini" style="color:${matchCount === 0 ? 'var(--accent-danger-color)' : (matchCount > 1 ? 'var(--accent-warning-color)' : 'var(--accent-success-color)')}">
-                                <i class="fas ${matchCount === 0 ? 'fa-times-circle' : (matchCount > 1 ? 'fa-exclamation-triangle' : 'fa-check-circle')}"></i> ${statusText}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="code-label" style="color:#ff9f0a; font-size:8px; margin-bottom:2px;">🔍 SEARCH FOR:</div>
-                    <div class="code-box-mini" style="margin-bottom:8px; border-color:rgba(255,159,10,0.2);">${escapeHtml(cleanIndentation(sCodeRaw))}</div>
-                    
-                    <div class="code-label" style="color:#30d158; font-size:8px; margin-bottom:2px;">✨ REPLACE WITH:</div>
-                    <div class="code-box-mini" style="border-color:rgba(48,209,88,0.2);">${escapeHtml(cleanIndentation(rCodeRaw))}</div>
-                    ${matchCount > 0 ? `
-                        <div class="card-nav-controls">
-                            ${matchCount > 1 ? `
-                                <button class="nav-btn-sm" onclick="navBlockMatch(${count-1}, -1)"><i class="fas fa-arrow-left"></i></button>
-                                <div style="display:flex; flex-direction:column; align-items:center; min-width:70px; gap:2px;">
-                                    <span style="font-size:11px; font-weight:800;" id="nav-info-${count-1}">1 / ${matchCount}</span>
-                                    <span style="font-size:9px; font-weight:bold; color:var(--accent-color);" id="nav-line-${count-1}">LINE: ${firstLine}</span>
-                                </div>
-                                <button class="nav-btn-sm" onclick="navBlockMatch(${count-1}, 1)"><i class="fas fa-arrow-right"></i></button>
-                            ` : `
-                                <div style="flex:1; font-size:9px; font-weight:bold; opacity:0.6;">LINE: ${firstLine}</div>
-                            `}
-                            <button class="apply-btn-sm" onclick="applySingleBlock(${count-1}, ${matchCount > 1})">
-                                <i class="fas fa-magic"></i> ${matchCount > 1 ? 'Apply Selected' : 'Apply Now'}
-                            </button>
-                        </div>
-                    ` : ''}
-                `;
-                analysisList.appendChild(card);
-            }
-
-            if (count === 0) {
-                showToast("कोई Search/Replace ब्लॉक नहीं मिला!");
-                analysisContainer.style.display = 'none';
-                document.getElementById('magicFooter').style.display = 'none';
-            } else {
-                // UI Magic: Collapse input after scan
-                document.getElementById('aiRawInput').classList.add('collapsed');
-                
-                analysisContainer.style.display = 'none'; 
-                document.getElementById('magicFooter').style.display = 'flex';
-                document.getElementById('btnTogglePreview').innerHTML = `<i class="fas fa-eye"></i> Show Report (${count})`;
-                
-                showToast(`${count} ब्लॉक्स मिले, ${totalBlocksWithMatches} में मैच मिला!`);
-                // AJ: Update Summary Bar and Pills
-                const summaryArea = document.getElementById('magicSummaryArea');
-                const pillContainer = document.getElementById('pillContainer');
-                const statsDiv = document.getElementById('summaryStats');
-                
-                summaryArea.style.display = 'flex';
-                statsDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${count} Blocks Found, ${totalBlocksWithMatches} Match मिले!`;
-                pillContainer.innerHTML = '';
-
-                extractedUpdates.forEach((upd, idx) => {
-                    const isMatched = upd.ranges.length > 0;
-                    const pill = document.createElement('div');
-                    pill.className = `block-pill ${isMatched ? 'matched' : 'missing'}`;
-                    pill.innerHTML = `<i class="fas ${isMatched ? 'fa-check' : 'fa-times'}"></i> Block ${idx + 1}`;
-                    pill.onclick = () => scrollToBlock(idx);
-                    pillContainer.appendChild(pill);
-                });
-
-                if (totalBlocksWithMatches > 0) {
-                    document.getElementById('btnApplyAll').style.display = 'flex';
-                    // AJ: Ensure button is not dummy on fresh scan
-                    document.getElementById('btnApplyAll').classList.remove('dummy');
-                    document.getElementById('btnApplyAll').innerHTML = `<i class="fas fa-check-double"></i> Apply All Changes`;
-                } else {
-                    document.getElementById('btnApplyAll').style.display = 'none';
-                }
-
-                // AJ: Ensure View Button is reset on fresh scan
-                document.getElementById('btnTogglePreview').innerHTML = `<i class="fas fa-eye"></i> View Report (${count})`;
-            }
-        }
-
-        // AJ: Enhanced Helper Functions for v1.22
-        function scrollToBlock(idx) {
-            const container = document.getElementById('analysisContainer');
-            const scrollArea = document.getElementById('magicResultsScroll');
-            
-            // अगर रिपोर्ट छिपी है, तो उसे पहले दिखाओ
-            if (container.style.display === 'none' || container.style.display === '') {
-                togglePreviewReport(); 
-            }
-
-            setTimeout(() => {
-                const card = document.getElementById(`card-${idx}`);
-                if (card && scrollArea) {
-                    const targetPos = card.offsetTop - 20;
-                    scrollArea.scrollTo({ top: targetPos, behavior: 'smooth' });
-                    
-                    // Card Flash Effect
-                    card.style.transition = "0.3s";
-                    card.style.boxShadow = "0 0 20px var(--accent-color)";
-                    card.style.borderColor = "var(--accent-color)";
-                    setTimeout(() => {
-                        card.style.boxShadow = "";
-                        card.style.borderColor = "";
-                    }, 1500);
-                }
-            }, 100);
-        }
-
-        function copyBlockToClipboard(idx) {
-            // AJ: Now copying the SEARCH code as requested
-            const code = extractedUpdates[idx].search;
-            
-            // AJ: Robust Fallback Copy Mechanism
-            const showSuccess = () => showToast(`Block ${idx + 1} का कोड कॉपी हो गया! 📋`);
-
-            if (!navigator.clipboard) {
-                const textArea = document.createElement("textarea");
-                textArea.value = code;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-9999px";
-                textArea.style.top = "0";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showSuccess();
-                } catch (err) {
-                    showToast('कॉपी नहीं हो पाया!');
-                }
-                document.body.removeChild(textArea);
-                return;
-            }
-
-            navigator.clipboard.writeText(code).then(
-                () => showSuccess(), 
-                () => {
-                    // अगर modern API फेल हो जाए तो फिर से fallback ट्राई करें
-                    const textArea = document.createElement("textarea");
-                    textArea.value = code;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    showSuccess();
-                }
-            );
-        }
-
-        // AJ: Exports only the scanned blocks data for debugging
-        function exportAnalysisJSON() {
-            if (extractedUpdates.length === 0) {
-                showToast("पहले स्कैन करें!");
-                return;
-            }
-            
-            // डेटा को क्लीन करना ताकि सिर्फ काम की जानकारी मिले
-            const exportData = extractedUpdates.map((block, idx) => ({
-                id: idx + 1,
-                status: block.ranges.length > 0 ? "READY" : "MISSING",
-                matchesFound: block.ranges.length,
-                searchCode: block.search,
-                replaceCode: block.replace
-            }));
-
-            const blob = new Blob([JSON.stringify(exportData, null, 4)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `Analysis_Report_${new Date().getTime()}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
-            showToast("एनालिसिस रिपोर्ट JSON में सेव हो गई! 📁");
-        }
-
-        function navBlockMatch(blockIdx, dir) {
-            const update = extractedUpdates[blockIdx];
-            update.currentIdx = (update.currentIdx + dir + update.ranges.length) % update.ranges.length;
-            
-            const range = update.ranges[update.currentIdx];
-            const lineNum = range.start.row + 1;
-
-            // अपडेट UI (Line number update added)
-            document.getElementById(`nav-info-${blockIdx}`).textContent = `${update.currentIdx + 1} / ${update.ranges.length}`;
-            document.getElementById(`nav-line-${blockIdx}`).textContent = `LINE: ${lineNum}`;
-            
-            // एडिटर में फोकस
-            aceEditor.selection.setRange(range);
-            aceEditor.scrollToLine(range.start.row, true, true, function() {});
-            
-            // ग्लो इफेक्ट और लाइन हाइलाइट (Surgical Context)
-            const Range = ace.require('ace/range').Range;
-            const lineRange = new Range(range.start.row, 0, range.start.row, 1);
-            
-            const lineMarkerId = aceEditor.session.addMarker(lineRange, "context-line-highlight", "fullLine");
-            const glowMarkerId = aceEditor.session.addMarker(range, "current-match-glow", "text");
-            
-            setTimeout(() => {
-                aceEditor.session.removeMarker(lineMarkerId);
-                aceEditor.session.removeMarker(glowMarkerId);
-            }, 2000);
-        }
-
-        async function applySingleBlock(blockIdx, isSelectedOnly) {
-            const update = extractedUpdates[blockIdx];
-            const Range = ace.require('ace/range').Range;
-            const card = document.getElementById(`card-${blockIdx}`);
-            
-            // Visual feedback: Card starts fading
-            if(card) {
-                card.style.opacity = "0.5";
-                card.style.pointerEvents = "none";
-            }
-
-            if (isSelectedOnly) {
-                const range = update.ranges[update.currentIdx];
-                // AJ Fix: Direct session replace for surgical precision
-                aceEditor.session.replace(range, update.replace);
-                
-                const lines = update.replace.split('\n');
-                const endRow = range.start.row + lines.length - 1;
-                const endCol = (lines.length > 1) ? lines[lines.length - 1].length : range.start.column + update.replace.length;
-                const markRange = new Range(range.start.row, range.start.column, endRow, endCol);
-                aceEditor.session.addMarker(markRange, "green-marker", "text");
-                
-                updateChangeCounter(1);
-            } else {
-                let count = 0;
-                // AJ Fix: Bottom-to-top replacement to keep ranges valid
-                const sortedRanges = [...update.ranges].sort((a, b) => b.start.row - a.start.row || b.start.column - a.start.column);
-                sortedRanges.forEach(r => {
-                    aceEditor.session.replace(r, update.replace);
-                    count++;
-                });
-                updateChangeCounter(count);
-            }
-            
-            showToast("बदलाव लागू किया गया! ✨");
-            saveCodeToLocalStorage();
-
-            // AJ: रिफ्रेश स्कैन अब और भी स्मूथ होगा
-            setTimeout(() => {
-                const currentScroll = document.getElementById('magicResultsScroll').scrollTop;
-                scanAIUpdate();
-                // रिस्कैन के बाद स्क्रॉल पोजीशन वापस सेट करना ताकि झटका न लगे
-                setTimeout(() => {
-                    document.getElementById('magicResultsScroll').scrollTop = currentScroll;
-                }, 50);
-            }, 300);
-        }
-
-        async function applyAllAIChanges() {
-            const readyBlocks = extractedUpdates.filter(u => u.ranges.length > 0);
-            if(readyBlocks.length === 0) {
-                showToast("बदलने के लिए कुछ नहीं बचा है!");
-                return;
-            }
-
-            const confirmed = await showCustomConfirm(`क्या आप बचे हुए ${readyBlocks.length} ब्लॉक्स के सभी बदलाव एक साथ करना चाहते हैं?`);
-            if (!confirmed) return;
-
-            let totalIncr = 0;
-            // AJ Fix: Collect all matches and sort them from bottom to top of the file
-            let allMatches = [];
-            extractedUpdates.forEach(upd => {
-                upd.ranges.forEach(r => allMatches.push({ range: r, text: upd.replace }));
-            });
-            allMatches.sort((a, b) => b.range.start.row - a.range.start.row || b.range.start.column - a.range.start.column);
-
-            allMatches.forEach(match => {
-                const startRow = match.range.start.row;
-                const startCol = match.range.start.column;
-
-                // AJ: Perform the replacement
-                aceEditor.session.replace(match.range, match.text);
-                totalIncr++;
-
-                // AJ: Calculate new range for highlighting
-                const lines = match.text.split('\n');
-                const endRow = startRow + lines.length - 1;
-                const endCol = (lines.length > 1) ? lines[lines.length - 1].length : startCol + match.text.length;
-                
-                const Range = ace.require('ace/range').Range;
-                const newMarkRange = new Range(startRow, startCol, endRow, endCol);
-                
-                // AJ: Add persistent Green Highlight so you can see changes in editor
-                const markerId = aceEditor.session.addMarker(newMarkRange, "green-marker", "text");
-                currentMarkers.push(markerId);
-            });
-            
-            updateChangeCounter(totalIncr);
-            saveCodeToLocalStorage();
-            
-            // AJ Fix v1.3: Success message with auto-reveal and persistent label
-            const analysisList = document.getElementById('analysisList');
-            const analysisContainer = document.getElementById('analysisContainer');
-            const inputContainer = document.getElementById('magicInputContainer');
-            const successScreen = document.getElementById('magicSuccessScreen');
-
-            inputContainer.style.opacity = '0.3';
-            inputContainer.style.pointerEvents = 'none';
-            analysisContainer.style.opacity = '0.3';
-            
-            // Positioning Success Overlay
-            successScreen.classList.remove('magic-fade-out');
-            successScreen.style.display = 'flex';
-            successScreen.style.position = 'absolute';
-            successScreen.style.top = '50%'; successScreen.style.left = '50%';
-            successScreen.style.transform = 'translate(-50%, -50%)';
-            successScreen.style.zIndex = '2000';
-            successScreen.style.background = 'rgba(20,20,20,0.95)';
-            successScreen.style.padding = '30px'; successScreen.style.borderRadius = '20px';
-            successScreen.style.border = '1px solid var(--accent-success-color)';
-            successScreen.style.boxShadow = '0 0 100px rgba(0,0,0,0.9)';
-            
-            document.getElementById('successMessageDetail').textContent = `शानदार! आपके सभी ${totalIncr} ब्लॉक्स सफलतापूर्वक बदल दिए गए हैं।`;
-            showToast("सभी बदलाव लागू कर दिए गए! ✨");
-
-            // Auto-hide success screen after 3 seconds to reveal report
-            setTimeout(() => {
-                successScreen.classList.add('magic-fade-out');
-                setTimeout(() => { 
-                    successScreen.style.display = 'none';
-                    inputContainer.style.opacity = '1';
-                    inputContainer.style.pointerEvents = 'auto';
-                    analysisContainer.style.opacity = '1';
-                    analysisContainer.style.display = 'block'; 
-                }, 600);
-            }, 3000);
-
-            // AJ Fix v1.3.8: Status Card at the TOP, visible even if report hidden
-            let statusCard = document.getElementById('persistentStatusCard');
-            if (!statusCard) {
-                statusCard = document.createElement('div');
-                statusCard.id = 'persistentStatusCard';
-                statusCard.className = 'update-card matched';
-                statusCard.style.textAlign = 'center';
-                statusCard.style.marginBottom = '15px';
-                // Insert at the top of the scroll area, before the container
-                document.getElementById('magicResultsScroll').insertBefore(statusCard, analysisContainer);
-            }
-            statusCard.style.display = 'block';
-            statusCard.innerHTML = `<i class="fas fa-check-double" style="color:var(--accent-success-color); font-size:20px; margin-bottom:8px;"></i><p style="font-weight:bold; color:var(--accent-success-color); font-size:14px;">शानदार भाई जी! सभी बदलाव लागू हो चुके हैं।</p>`;
-            
-            // Disable further changes for current blocks
-            const applyBtn = document.getElementById('btnApplyAll');
-            applyBtn.classList.add('dummy');
-            applyBtn.innerHTML = `<i class="fas fa-check"></i> Applied All`;
-            const viewBtn = document.getElementById('btnTogglePreview');
-            viewBtn.innerHTML = `<i class="fas fa-history"></i> Changes Applied`;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-    </script>
+  });
+
+  // User location
+  if (userLat !== null) {
+    const ux = toX(userLon), uy = toY(userLat);
+    ctx.beginPath();
+    ctx.arc(ux, uy, 7, 0, Math.PI*2);
+    ctx.fillStyle = '#4a9eff';
+    ctx.shadowColor = '#4a9eff';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(ux, uy, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+  }
+}
+
+// ── ALARM MODAL ───────────────────────────────────────────────────────────────
+function openAlarmModal(idx) {
+  alarmTarget = idx;
+  const modal = document.getElementById('alarm-modal');
+  const sub = document.getElementById('modal-sub');
+  if (idx === -1) {
+    sub.textContent = 'Sabhi stations ke liye alarm set hoga';
+  } else {
+    const hasAlarm = alarms[idx] !== undefined;
+    sub.textContent = hasAlarm
+      ? `${stations[idx].station} — Alarm update karo`
+      : `${stations[idx].station} — Alarm set karo`;
+    if (hasAlarm) document.getElementById('alarm-dist-input').value = (alarms[idx] * 1000).toFixed(0);
+  }
+  modal.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('alarm-modal').classList.remove('open');
+  alarmTarget = null;
+}
+
+ function confirmAlarm() {
+  const distMeters = parseFloat(document.getElementById('alarm-dist-input').value);
+  if (isNaN(distMeters) || distMeters <= 0) { showToast('Valid distance dalo!'); return; }
+  const distKm = distMeters / 1000;
+
+  if (alarmTarget === -1) {
+    stations.forEach((_, i) => { alarms[i] = distKm; });
+    showToast(`✅ Sabhi ke liye ${distMeters}m pehle alarm set!`);
+  } else {
+    alarms[alarmTarget] = distKm;
+    showToast(`✅ ${stations[alarmTarget].station} — ${distMeters}m pehle alarm set!`);
+  }
+  localStorage.setItem('rail_alarms', JSON.stringify(alarms));
+  closeModal();
+  firedAlarms = new Set();
+  const { idx: nextIdx } = userLat !== null ? nextStation(userLat, userLon) : { idx: -1 };
+  renderStationsList(nextIdx);
+}
+
+// Close modal on overlay click
+document.getElementById('alarm-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+</script>
 </body>
 </html>
